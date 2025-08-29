@@ -1,0 +1,69 @@
+Plan Maestro y Definitivo: AI Painter
+Estrategia General: El proyecto se ejecutará en dos etapas. Etapa 1: Lanzamiento del Producto Mínimo Viable (MVP), enfocado 100% en una experiencia de generación de imágenes perfecta y memorable, con control de costos. Etapa 2: Primera Mejora Post-Lanzamiento, que consistirá en añadir la funcionalidad de impresión de forma sencilla para probar el interés del mercado.
+
+ETAPA 1: LANZAMIENTO DEL PRODUCTO MÍNIMO VIABLE (MVP)
+Fase 1.1: Prototipado y Definición Creativa (Cero Código)
+Objetivo: Definir el "alma" artística de la aplicación.
+Herramienta: Google AI Studio.
+Acciones:
+Acceder a aistudio.google.com.
+Crear un nuevo "Gemini 1.5 Pro prompt".
+Experimentar subiendo imágenes de prueba y escribiendo diferentes prompts artísticos.
+Refinar el texto del prompt hasta que el estilo, la paleta de colores y la textura de las imágenes generadas sean consistentemente de alta calidad y fieles a tu visión.
+Entregable Clave: Un prompt de texto final, que será el corazón de nuestro backend.
+Fase 1.2: Configuración de la Infraestructura (Preparación Técnica)
+Objetivo: Preparar las herramientas y servicios en la nube.
+Acciones:
+En una computadora (Mac/Windows), instalar Node.js.
+Instalar las herramientas de Firebase (CLI) con el comando npm install -g firebase-tools.
+Crear un nuevo proyecto en la Consola de Firebase.
+Dentro de ese proyecto, ir a la sección de "Build" y habilitar:
+Authentication: Activar el proveedor de "Google".
+Firestore Database: Crear una nueva base de datos.
+En la misma consola, buscar y habilitar la API de Vertex AI.
+En la terminal de la computadora, iniciar sesión con firebase login.
+Fase 1.3: Creación del Backend (El Motor Seguro y Controlado)
+Objetivo: Construir el servidor que gestiona la lógica, los límites de usuario y la comunicación con la IA.
+Acciones:
+Crear la carpeta del proyecto e inicializar Firebase con firebase init functions.
+Lógica de Usuarios: Escribir la Cloud Function onUserCreate. Esta función se activará automáticamente cuando un nuevo usuario se registre y creará un documento para él en la base de datos Firestore con su cuota inicial (ej: 3 generaciones gratuitas).
+Lógica de Generación: Escribir la Cloud Function principal (/generate) que:
+Verifica que el usuario que hace la petición esté autenticado.
+Consulta la base de datos para ver si le quedan generaciones disponibles.
+Si tiene, llama a la API de Vertex AI enviando la foto y el prompt de la Fase 1.1.
+Resta una generación de la base de datos.
+Devuelve la imagen final al frontend.
+Si no tiene generaciones, devuelve un error amigable.
+Desplegar las funciones a la nube con firebase deploy --only functions.
+Entregable Clave: Una API segura, funcional y con control de costos.
+Fase 1.4: Creación del Frontend (La Experiencia de Usuario Pulida)
+Objetivo: Construir la interfaz web interactiva que enamore a los usuarios.
+Acciones:
+HTML: Estructurar la página con un área de bienvenida, un botón de "Iniciar Sesión con Google", un contenedor para el comparador "Antes y Después", un área para la animación de carga y los botones de "Descargar" y "Compartir".
+CSS: Estilizar la página para que sea atractiva y profesional.
+JavaScript:
+Autenticación: Implementar el flujo de inicio de sesión de Firebase. La interfaz cambiará una vez que el usuario inicie sesión, mostrando el botón para subir fotos.
+Lógica Principal: Gestionar el flujo completo: mostrar/ocultar elementos según el estado (esperando foto, cargando, mostrando resultado).
+Animación de Carga: Implementar los mensajes dinámicos ("Preparando pinceles...").
+Comparador "Antes y Después": Integrar el código para este efecto visual.
+Botones de Acción: Programar la funcionalidad de "Descargar" y "Compartir" (usando la Web Share API).
+Manejo de Errores: Mostrar mensajes amigables si algo falla.
+Fase 1.5: Lanzamiento Público (MVP)
+Objetivo: Poner la aplicación online.
+Acciones:
+Inicializar Firebase Hosting con firebase init hosting.
+Desplegar los archivos del frontend con firebase deploy --only hosting.
+Entregable Clave: La URL pública de la aplicación AI Painter, lista para ser compartida.
+ETAPA 2: PRIMERA MEJORA POST-LANZAMIENTO
+Objetivo: Añadir una opción de monetización simple.
+Nombre de la Funcionalidad: "Imprime tu Obra" (Versión Sencilla).
+Acciones:
+Configuración Externa: Crear una cuenta en Printful (o similar) y diseñar un producto base (ej. "Lienzo Personalizado"). Obtener el enlace público de este producto.
+Modificación del Frontend:
+Añadir un nuevo botón "Imprimir esta Obra" que aparece junto a "Descargar".
+El botón será un enlace que abrirá la URL del producto de Printful en una nueva pestaña.
+Añadir un texto de ayuda: "1. Descarga tu obra. 2. Súbela en nuestra tienda para imprimirla."
+Despliegue de la Mejora: Volver a desplegar el frontend con firebase deploy --only hosting.
+Hecho. Este es el plan completo y detallado. Lo he guardado para que sea nuestra guía.
+
+Cuando estés listo, arrancamos con la Fase 1.1: Prototipado y Definición Creativa.
