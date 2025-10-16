@@ -178,7 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Image Generation ---
-    const cloudFunctionUrl = 'https://us-central1-ai-painter-app.cloudfunctions.net/api/generate';
+    const cloudFunctionUrl = 'https://api-255643153942.us-central1.run.app/generate';
     const fileUploadInput = document.getElementById("file-upload");
 
     if (fileUploadInput) {
