@@ -1,4 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const admin = require("firebase-admin");
 const express = require("express");
 const Jimp = require("jimp");
@@ -6,7 +7,116 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 admin.initializeApp();
 
+// INITIALIZE USER WITH FREE CREDITS
+// ==============================
+// Esta función se ejecuta cuando la Firebase Extension crea un documento
+// en customers/{uid} (sucede automáticamente al autenticarse)
+exports.initializeUser = onDocumentCreated(
+  "customers/{uid}",
+  async (event) => {
+    const userId = event.params.uid;
+    
+    try {
+      // Verificar si el usuario ya existe en la colección users
+      const userRef = admin.firestore().collection("users").doc(userId);
+      const userDoc = await userRef.get();
+      
+      if (!userDoc.exists) {
+        // Crear usuario con 3 créditos gratis
+        await userRef.set({
+          credits: 3,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`Created user ${userId} with 3 free credits`);
+      } else {
+        console.log(`User ${userId} already exists, skipping initialization`);
+      }
+      
+      return null;
+    } catch (error) {
+      console.error(`Error initializing user ${userId}:`, error);
+      return null;
+    }
+  }
+);
+
+// GRANT CREDITS ON PAYMENT
+// ==============================
+// Esta función se ejecuta cuando un pago se completa exitosamente
+// y agrega los créditos correspondientes al usuario
+exports.grantCreditsOnPayment = onDocumentCreated(
+  "customers/{uid}/payments/{paymentId}",
+  async (event) => {
+    const payment = event.data.data();
+    const userId = event.params.uid;
+    
+    // Solo procesar pagos exitosos
+    if (payment.status !== "succeeded") {
+      console.log(`Payment ${event.params.paymentId} not succeeded: ${payment.status}`);
+      return null;
+    }
+    
+    // Mapear Price IDs a créditos
+    const CREDITS_BY_PRICE = {
+      "price_1SJ0UWGdnHfsTKebUDHcFzL3": 10,  // Starter Pack
+      "price_1SJ0eSGdnHfsTKeb3RErkfWa": 30,  // Popular Pack
+    };
+    
+    // Obtener el price ID del pago
+    const priceId =
+      payment.items?.[0]?.price?.id ||
+      payment.price?.id ||
+      payment.prices?.[0]?.id ||
+      null;
+    
+    if (!priceId) {
+      console.error(`No price ID found in payment ${event.params.paymentId}`);
+      return null;
+    }
+    
+    const credits = CREDITS_BY_PRICE[priceId];
+    
+    if (!credits) {
+      console.error(`Unknown price ID: ${priceId}`);
+      return null;
+    }
+    
+    // Agregar créditos al usuario
+    try {
+      await admin.firestore().collection("users").doc(userId).set(
+        {
+          credits: admin.firestore.FieldValue.increment(credits),
+        },
+        { merge: true }
+      );
+      
+      console.log(`Added ${credits} credits to user ${userId} from payment ${event.params.paymentId}`);
+      return null;
+    } catch (error) {
+      console.error(`Error adding credits to user ${userId}:`, error);
+      return null;
+    }
+  }
+);
+
 const app = express();
+
+// Helper para extraer y verificar el token de autorización
+async function authenticateRequest(req, res) {
+  if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) {
+    res.status(403).json({ error: "Usuario no autenticado." });
+    return null;
+  }
+  const idToken = req.headers.authorization.split("Bearer ")[1];
+  try {
+    return await admin.auth().verifyIdToken(idToken);
+  } catch (error) {
+    console.error("Token inválido:", error);
+    res.status(403).json({ error: "Token de autenticación inválido." });
+    return null;
+  }
+}
+
 
 // Orígenes permitidos
 const ALLOWED = new Set([
@@ -39,8 +149,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Parser JSON
+ // Parser JSON
 app.use(express.json());
+
+// Endpoint para asegurar documento de usuario con créditos iniciales
+app.post("/ensure-user", async (req, res) => {
+  try {
+    const decodedToken = await authenticateRequest(req, res);
+    if (!decodedToken) return;
+
+    const userId = decodedToken.uid;
+    const userRef = admin.firestore().collection("users").doc(userId);
+
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      await userRef.set(
+        {
+          credits: 3,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      res.json({ credits: 3, created: true });
+    } else {
+      const data = userDoc.data() || {};
+      res.json({ credits: data.credits || 0, created: false });
+    }
+  } catch (error) {
+    console.error("Error en ensure-user:", error);
+    res.status(500).json({ error: "No se pudo inicializar la cuenta." });
+  }
+});
 
 // Endpoint para generar imágenes
 app.post("/generate", async (req, res) => {

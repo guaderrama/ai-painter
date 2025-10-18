@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         processing: document.getElementById("processing-screen"),
         result: document.getElementById("result-screen"),
         limit: document.getElementById("limit-screen"),
+        pricing: document.getElementById("pricing-screen"),
     };
 
     const buttons = {
@@ -245,22 +246,36 @@ document.addEventListener("DOMContentLoaded", () => {
         if (ui.userGreeting) ui.userGreeting.textContent = `Hello, ${user.email}`;
         const userRef = db.collection("users").doc(user.uid);
 
-        userRef.onSnapshot(doc => {
+        userRef.onSnapshot(async doc => {
             if (doc.exists) {
                 const userData = doc.data();
                 if (ui.userCredits) {
                     ui.userCredits.textContent = `${userData.credits || 0} credits remaining`;
                 }
                 // Decide which screen to show based on credits
-                if (userData.credits > 0) {
+                if ((userData.credits || 0) > 0) {
                     showScreen("upload");
                 } else {
                     showScreen("limit");
                 }
             } else {
-                // This case happens for a new user before the backend function creates their document
-                console.log("No user document found, should be created by backend function.");
-                // You might want to show a loading or waiting screen here
+                try {
+                    await userRef.set(
+                        {
+                            credits: 3,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        },
+                        { merge: true }
+                    );
+                    if (ui.userCredits) {
+                        ui.userCredits.textContent = "3 credits remaining";
+                    }
+                    showScreen("upload");
+                } catch (createErr) {
+                    console.error("Error creating initial user document:", createErr);
+                    alert("We couldn't finish setting up your account. Please refresh and try again.");
+                    showScreen("login");
+                }
             }
         }, err => {
             console.error("Error fetching user data:", err);
@@ -357,6 +372,32 @@ document.addEventListener("DOMContentLoaded", () => {
             const user = auth.currentUser;
             if (!user) {
                 alert("Please sign in to generate images.");
+                return;
+            }
+
+            // ✅ VALIDAR CRÉDITOS ANTES DE PROCESAR
+            try {
+                const userRef = db.collection("users").doc(user.uid);
+                const userDoc = await userRef.get();
+                
+                if (!userDoc.exists) {
+                    alert("Please wait while we set up your account...");
+                    fileUploadInput.value = ""; // Reset input
+                    return;
+                }
+                
+                const userCredits = userDoc.data().credits || 0;
+                
+                if (userCredits < 1) {
+                    // No tiene créditos, mostrar pantalla de límite
+                    showScreen("limit");
+                    fileUploadInput.value = ""; // Reset input
+                    return;
+                }
+            } catch (error) {
+                console.error("Error checking credits:", error);
+                alert("Error checking your credits. Please try again.");
+                fileUploadInput.value = ""; // Reset input
                 return;
             }
 
@@ -674,6 +715,150 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }
+    }
+
+    // ==============================
+    // STRIPE PAYMENT LOGIC
+    // ==============================
+    
+    // ⚠️ IMPORTANT: Replace these with your actual Price IDs from Stripe Dashboard
+    const STRIPE_PRICES = {
+        starter: 'price_1SJ0UWGdnHfsTKebUDHcFzL3',
+        popular: 'price_1SJ0eSGdnHfsTKeb3RErkfWa',
+        pro: 'price_REPLACE_WITH_YOUR_PRO_PRICE_ID',  // TODO: Crear Pro Pack ($29.99)
+        artist: 'price_REPLACE_WITH_YOUR_ARTIST_PRICE_ID',  // TODO: Crear Artist Pack ($69.99)
+    };
+    
+    // ⚠️ IMPORTANT: Replace with your actual Publishable Key from Stripe
+    // Get it from: https://dashboard.stripe.com/test/apikeys
+    const STRIPE_PUBLISHABLE_KEY = 'pk_test_51N4Hx4GdnHfsTKebYwuwrVG9P5Eu6b2G7tnoECAFcomtCNyFCF0IfnuUeWsMPwbBkZbDrvgpuEw8JePcVuHait5W00022FKcge';
+    
+    // Initialize Stripe (will fail gracefully if key not set yet)
+    let stripe = null;
+    try {
+        if (STRIPE_PUBLISHABLE_KEY && !STRIPE_PUBLISHABLE_KEY.includes('REPLACE')) {
+            stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+        } else {
+            console.warn('⚠️ Stripe not initialized: Please add your Publishable Key to script.js');
+        }
+    } catch (error) {
+        console.error('Error initializing Stripe:', error);
+    }
+    
+    // Pricing screen navigation
+    const closePricingBtn = document.getElementById('close-pricing');
+    const buyMoreCreditsBtn = document.getElementById('buy-more-credits-limit');
+    const buyCreditsButtons = document.querySelectorAll('.buy-credits-btn');
+    
+    // Open pricing screen from limit screen
+    if (buyMoreCreditsBtn) {
+        buyMoreCreditsBtn.addEventListener('click', () => {
+            showScreen('pricing');
+        });
+    }
+    
+    // Close pricing screen
+    if (closePricingBtn) {
+        closePricingBtn.addEventListener('click', () => {
+            const user = auth.currentUser;
+            if (user) {
+                // Check credits to decide where to go back
+                const userRef = db.collection('users').doc(user.uid);
+                userRef.get().then(doc => {
+                    if (doc.exists) {
+                        const credits = doc.data().credits || 0;
+                        showScreen(credits > 0 ? 'upload' : 'limit');
+                    } else {
+                        showScreen('upload');
+                    }
+                });
+            } else {
+                showScreen('login');
+            }
+        });
+    }
+    
+    // Handle buy credits button clicks
+    if (buyCreditsButtons) {
+        buyCreditsButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const plan = this.getAttribute('data-plan');
+                const priceId = STRIPE_PRICES[plan];
+                
+                // Validate user is logged in
+                const user = auth.currentUser;
+                if (!user) {
+                    alert('Please sign in to purchase credits.');
+                    showScreen('login');
+                    return;
+                }
+                
+                // Validate Stripe is initialized
+                if (!stripe) {
+                    alert('Payment system not configured. Please contact support.');
+                    console.error('Stripe not initialized. Please add your Publishable Key.');
+                    return;
+                }
+                
+                // Validate price ID
+                if (!priceId || priceId.includes('REPLACE')) {
+                    alert('Payment system not configured. Please contact support.');
+                    console.error(`Price ID for ${plan} not configured. Please add your Price IDs from Stripe Dashboard.`);
+                    return;
+                }
+                
+                try {
+                    // Disable button
+                    this.disabled = true;
+                    this.textContent = 'Processing...';
+                    
+                    // Create checkout session in Firestore
+                    // The Stripe extension will listen to this and create the Stripe session
+                    const checkoutSessionRef = await db
+                        .collection('customers')
+                        .doc(user.uid)
+                        .collection('checkout_sessions')
+                        .add({
+                            mode: 'payment',  // One-time payment, not subscription
+                            price: priceId,
+                            success_url: window.location.origin,
+                            cancel_url: window.location.origin,
+                        });
+                    
+                    // Wait for the Stripe extension to create the session
+                    checkoutSessionRef.onSnapshot(async (snap) => {
+                        const { error, sessionId } = snap.data();
+                        
+                        if (error) {
+                            // Show error
+                            alert(`An error occurred: ${error.message}`);
+                            this.disabled = false;
+                            this.textContent = 'Buy Now';
+                            return;
+                        }
+                        
+                        if (sessionId) {
+                            // Redirect to Stripe Checkout
+                            const { error: stripeError } = await stripe.redirectToCheckout({
+                                sessionId
+                            });
+                            
+                            if (stripeError) {
+                                alert(`Checkout error: ${stripeError.message}`);
+                                this.disabled = false;
+                                this.textContent = 'Buy Now';
+                            }
+                        }
+                    });
+                    
+                } catch (error) {
+                    console.error('Error creating checkout session:', error);
+                    alert(`An error occurred: ${error.message}`);
+                    this.disabled = false;
+                    this.textContent = 'Buy Now';
+                }
+            });
+        });
     }
 
     // --- Other Button Logic ---

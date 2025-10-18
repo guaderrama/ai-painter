@@ -1,11 +1,25 @@
 # 🔄 INSTRUCCIONES DE BACKUP Y RESTAURACIÓN
 
-## ✅ BACKUP COMPLETADO
+## ✅ BACKUPS DISPONIBLES
 
+### **ÚLTIMO BACKUP: v1.1-stable** ⭐
+**Fecha:** 16 de Octubre, 2025  
+**Commit:** 0dbb3e7  
+**Estado:** App completa con 6 mejoras principales implementadas
+
+**Funcionalidades:**
+- ✅ Welcome/Onboarding Screen (4 slides)
+- ✅ App 100% en inglés
+- ✅ Enhanced Processing Screen (progress bar + mensajes inspiradores)
+- ✅ Before/After Slider (3 modos de comparación)
+- ✅ Fullscreen mode
+- ✅ Social Sharing (Instagram, WhatsApp, Facebook, Copy Link)
+- ✅ CORS, Auth, Créditos, Gemini 2.5 Flash
+
+### **BACKUP ANTERIOR: v1.0-stable**
 **Fecha:** 15 de Octubre, 2025  
-**Versión:** v1.0-stable  
 **Commit:** 1f197d1  
-**Estado:** App 100% funcional con Gemini 2.5 Flash Image
+**Estado:** App base funcional con Gemini 2.5 Flash Image
 
 ---
 

@@ -69,6 +69,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    
+    <!-- Stripe SDK -->
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
 
@@ -437,12 +440,147 @@
         </div>
     </div>
     <div id="limit-screen" class="screen relative size-full min-h-screen flex-col bg-[#111418] justify-center items-center px-4">
-        <div class="text-center">
+        <div class="text-center max-w-md">
             <h2 class="text-white text-2xl font-bold mb-4">Out of Credits</h2>
-            <p class="text-[#9dabb8] text-base mb-6">You've used all your credits. Contact support to get more!</p>
-            <button id="logout-from-limit" onclick="firebase.auth().signOut()" class="bg-[#293038] text-white font-bold py-3 px-6 rounded-xl hover:bg-gray-700 transition duration-300">
+            <p class="text-[#9dabb8] text-base mb-6">You've used all your credits. Get more to continue creating amazing artworks!</p>
+            <button id="buy-more-credits-limit" class="bg-[#1980e6] text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition duration-300 mb-4">
+                Buy Credits
+            </button>
+            <button id="logout-from-limit" onclick="firebase.auth().signOut()" class="block w-full bg-[#293038] text-white font-bold py-3 px-6 rounded-xl hover:bg-gray-700 transition duration-300">
                 Logout
             </button>
+        </div>
+    </div>
+
+    <!-- Pricing Screen -->
+    <div id="pricing-screen" class="screen relative size-full min-h-screen flex-col bg-[#111418] overflow-x-hidden overflow-y-auto p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <button id="close-pricing" class="flex size-12 shrink-0 items-center justify-center rounded-xl text-white cursor-pointer hover:bg-[#293038] transition duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path>
+                </svg>
+            </button>
+            <h2 class="text-white text-lg font-bold flex-1 text-center pr-12">Choose Your Plan</h2>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="max-w-6xl mx-auto w-full">
+            <p class="text-[#9dabb8] text-center mb-8">Select the perfect credit package for your creative needs</p>
+            
+            <!-- Pricing Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                
+                <!-- Starter Pack -->
+                <div class="pricing-card bg-[#293038] rounded-xl p-6 flex flex-col">
+                    <h3 class="text-white text-xl font-bold mb-2">Starter</h3>
+                    <p class="text-[#9dabb8] text-sm mb-4">Perfect for trying</p>
+                    <div class="mb-4">
+                        <span class="text-white text-4xl font-bold">$4.99</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-white text-2xl font-semibold">10 Credits</p>
+                        <p class="text-[#9dabb8] text-sm">$0.50 per artwork</p>
+                    </div>
+                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="starter">
+                        Buy Now
+                    </button>
+                </div>
+
+                <!-- Popular Pack -->
+                <div class="pricing-card bg-[#1980e6] rounded-xl p-6 flex flex-col relative border-2 border-[#1980e6] shadow-lg">
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-white text-[#1980e6] text-xs font-bold px-3 py-1 rounded-full">BEST VALUE</span>
+                    </div>
+                    <h3 class="text-white text-xl font-bold mb-2">Popular</h3>
+                    <p class="text-white opacity-90 text-sm mb-4">Most chosen</p>
+                    <div class="mb-4">
+                        <span class="text-white text-4xl font-bold">$12.99</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-white text-2xl font-semibold">30 Credits</p>
+                        <p class="text-white opacity-90 text-sm">$0.43 per artwork</p>
+                        <p class="text-white text-xs font-semibold mt-1">Save 14%</p>
+                    </div>
+                    <button class="buy-credits-btn mt-auto bg-white text-[#1980e6] font-bold py-3 px-6 rounded-xl hover:bg-gray-100 transition duration-300" data-plan="popular">
+                        Buy Now
+                    </button>
+                </div>
+
+                <!-- Pro Pack -->
+                <div class="pricing-card bg-[#293038] rounded-xl p-6 flex flex-col">
+                    <h3 class="text-white text-xl font-bold mb-2">Pro</h3>
+                    <p class="text-[#9dabb8] text-sm mb-4">For enthusiasts</p>
+                    <div class="mb-4">
+                        <span class="text-white text-4xl font-bold">$29.99</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-white text-2xl font-semibold">75 Credits</p>
+                        <p class="text-[#9dabb8] text-sm">$0.40 per artwork</p>
+                        <p class="text-green-500 text-xs font-semibold mt-1">Save 20%</p>
+                    </div>
+                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="pro">
+                        Buy Now
+                    </button>
+                </div>
+
+                <!-- Artist Pack -->
+                <div class="pricing-card bg-[#293038] rounded-xl p-6 flex flex-col">
+                    <h3 class="text-white text-xl font-bold mb-2">Artist</h3>
+                    <p class="text-[#9dabb8] text-sm mb-4">For professionals</p>
+                    <div class="mb-4">
+                        <span class="text-white text-4xl font-bold">$69.99</span>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-white text-2xl font-semibold">200 Credits</p>
+                        <p class="text-[#9dabb8] text-sm">$0.35 per artwork</p>
+                        <p class="text-green-500 text-xs font-semibold mt-1">Save 30%</p>
+                    </div>
+                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="artist">
+                        Buy Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="bg-[#293038] rounded-xl p-6 mb-8">
+                <h3 class="text-white text-lg font-bold mb-4 text-center">What You Get</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-[#1980e6] mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <p class="text-white font-semibold">Gemini 2.5 Flash</p>
+                            <p class="text-[#9dabb8]">Latest AI model</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-[#1980e6] mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <p class="text-white font-semibold">High Resolution</p>
+                            <p class="text-[#9dabb8]">Up to 1024px</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-[#1980e6] mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <p class="text-white font-semibold">Instant Download</p>
+                            <p class="text-[#9dabb8]">PNG format</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="text-center text-sm text-[#9dabb8]">
+                <p class="mb-2">Secure payment powered by Stripe</p>
+                <p>Credits never expire • Cancel anytime</p>
+            </div>
         </div>
     </div>
 
