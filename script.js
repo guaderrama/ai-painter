@@ -791,6 +791,116 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==============================
+    // ENHANCED SHARING - COLLAGES & STORIES
+    // ==============================
+    
+    // Generate Before/After Collage
+    async function generateBeforeAfterCollage(originalUrl, artworkUrl) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1080;
+            canvas.height = 1080;
+            const ctx = canvas.getContext('2d');
+            
+            // Load both images
+            const originalImg = new Image();
+            const artworkImg = new Image();
+            
+            let loadedCount = 0;
+            const onImageLoad = () => {
+                loadedCount++;
+                if (loadedCount === 2) {
+                    // Background
+                    ctx.fillStyle = '#111418';
+                    ctx.fillRect(0, 0, 1080, 1080);
+                    
+                    // Draw original (left side)
+                    ctx.drawImage(originalImg, 40, 140, 480, 720);
+                    
+                    // Draw arrow
+                    ctx.fillStyle = '#1980e6';
+                    ctx.font = 'bold 60px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('→', 540, 520);
+                    
+                    // Draw artwork (right side)
+                    ctx.drawImage(artworkImg, 560, 140, 480, 720);
+                    
+                    // Add branding at bottom
+                    ctx.fillStyle = '#9dabb8';
+                    ctx.font = '18px "Spline Sans", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Through the Vision of', 540, 920);
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 28px "Spline Sans", sans-serif';
+                    ctx.fillText('Iván Guaderrama', 540, 955);
+                    
+                    resolve(canvas.toDataURL('image/png'));
+                }
+            };
+            
+            originalImg.onload = onImageLoad;
+            artworkImg.onload = onImageLoad;
+            originalImg.src = originalUrl;
+            artworkImg.src = artworkUrl;
+        });
+    }
+    
+    // Generate Instagram Story format
+    async function generateInstagramStory(artworkUrl) {
+        return new Promise((resolve) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1080;
+            canvas.height = 1920;
+            const ctx = canvas.getContext('2d');
+            
+            const artworkImg = new Image();
+            artworkImg.onload = () => {
+                // Background with blurred artwork
+                ctx.filter = 'blur(30px) brightness(0.4)';
+                const scale = Math.max(1080 / artworkImg.width, 1920 / artworkImg.height);
+                const scaledWidth = artworkImg.width * scale;
+                const scaledHeight = artworkImg.height * scale;
+                const offsetX = (1080 - scaledWidth) / 2;
+                const offsetY = (1920 - scaledHeight) / 2;
+                ctx.drawImage(artworkImg, offsetX, offsetY, scaledWidth, scaledHeight);
+                
+                // Main artwork centered (no blur)
+                ctx.filter = 'none';
+                const artworkHeight = 1400;
+                const artworkWidth = 1080;
+                const artworkTop = 200;
+                ctx.drawImage(artworkImg, 0, artworkTop, artworkWidth, artworkHeight);
+                
+                // Branding at bottom
+                ctx.fillStyle = 'rgba(17, 20, 24, 0.8)';
+                ctx.fillRect(0, 1700, 1080, 220);
+                
+                ctx.fillStyle = '#9dabb8';
+                ctx.font = '24px "Spline Sans", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Through the Vision of', 540, 1770);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px "Spline Sans", sans-serif';
+                ctx.fillText('Iván Guaderrama', 540, 1820);
+                
+                // Decorative element
+                ctx.strokeStyle = '#1980e6';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(340, 1850);
+                ctx.lineTo(740, 1850);
+                ctx.stroke();
+                
+                resolve(canvas.toDataURL('image/png'));
+            };
+            artworkImg.src = artworkUrl;
+        });
+    }
+    
+    // ==============================
     // SOCIAL SHARING LOGIC
     // ==============================
     
@@ -812,6 +922,89 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (shareOptions) {
                     shareOptions.classList.toggle('hidden');
                     shareOptions.classList.toggle('flex');
+                }
+            });
+        }
+        
+        // Generate Before/After Collage
+        const generateCollageBtn = document.getElementById('generate-collage');
+        if (generateCollageBtn && originalImageUrl) {
+            generateCollageBtn.addEventListener('click', async () => {
+                try {
+                    // Show loading state
+                    generateCollageBtn.disabled = true;
+                    generateCollageBtn.innerHTML = '<span>Generating...</span>';
+                    
+                    // Generate collage
+                    const collageDataUrl = await generateBeforeAfterCollage(originalImageUrl, currentArtworkUrl);
+                    
+                    // Download the collage
+                    const a = document.createElement('a');
+                    a.href = collageDataUrl;
+                    a.download = `before-after-collage-${Date.now()}.png`;
+                    a.click();
+                    
+                    showToast('✓ Collage generated and downloaded!', 'success');
+                    
+                    // Reset button
+                    generateCollageBtn.disabled = false;
+                    generateCollageBtn.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-[#1980e6] flex items-center justify-center">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-white font-semibold">Before/After Collage</p>
+                            <p class="text-[#9dabb8] text-xs">Perfect for Instagram Post (1080x1080)</p>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error generating collage:', error);
+                    showToast('Failed to generate collage', 'error');
+                    generateCollageBtn.disabled = false;
+                }
+            });
+        }
+        
+        // Generate Instagram Story
+        const generateStoryBtn = document.getElementById('generate-story');
+        if (generateStoryBtn) {
+            generateStoryBtn.addEventListener('click', async () => {
+                try {
+                    // Show loading state
+                    generateStoryBtn.disabled = true;
+                    generateStoryBtn.innerHTML = '<span>Generating...</span>';
+                    
+                    // Generate story format
+                    const storyDataUrl = await generateInstagramStory(currentArtworkUrl);
+                    
+                    // Download the story
+                    const a = document.createElement('a');
+                    a.href = storyDataUrl;
+                    a.download = `instagram-story-${Date.now()}.png`;
+                    a.click();
+                    
+                    showToast('✓ Instagram Story generated!', 'success');
+                    
+                    // Reset button
+                    generateStoryBtn.disabled = false;
+                    generateStoryBtn.innerHTML = `
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="7" y="2" width="10" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/>
+                                <circle cx="12" cy="6" r="1.5" fill="white"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-white font-semibold">Instagram Story</p>
+                            <p class="text-[#9dabb8] text-xs">Optimized format (1080x1920)</p>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error generating story:', error);
+                    showToast('Failed to generate story', 'error');
+                    generateStoryBtn.disabled = false;
                 }
             });
         }

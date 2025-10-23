@@ -47,42 +47,78 @@ exports.initializeUser = onDocumentCreated(
 exports.grantCreditsOnPayment = onDocumentCreated(
   "customers/{uid}/payments/{paymentId}",
   async (event) => {
-    const payment = event.data.data();
-    const userId = event.params.uid;
-    
-    // Solo procesar pagos exitosos
-    if (payment.status !== "succeeded") {
-      console.log(`Payment ${event.params.paymentId} not succeeded: ${payment.status}`);
-      return null;
-    }
-    
-    // Mapear Price IDs a créditos
-    const CREDITS_BY_PRICE = {
-      "price_1SJ0UWGdnHfsTKebUDHcFzL3": 10,  // Starter Pack
-      "price_1SJ0eSGdnHfsTKeb3RErkfWa": 30,  // Popular Pack
-    };
-    
-    // Obtener el price ID del pago
-    const priceId =
-      payment.items?.[0]?.price?.id ||
-      payment.price?.id ||
-      payment.prices?.[0]?.id ||
-      null;
-    
-    if (!priceId) {
-      console.error(`No price ID found in payment ${event.params.paymentId}`);
-      return null;
-    }
-    
-    const credits = CREDITS_BY_PRICE[priceId];
-    
-    if (!credits) {
-      console.error(`Unknown price ID: ${priceId}`);
-      return null;
-    }
-    
-    // Agregar créditos al usuario
     try {
+      const payment = event.data.data();
+      const userId = event.params.uid;
+      const paymentId = event.params.paymentId;
+      
+      console.log(`Processing payment ${paymentId} for user ${userId}`);
+      console.log(`Payment data:`, JSON.stringify(payment, null, 2));
+      
+      // Solo procesar pagos exitosos
+      if (payment.status !== "succeeded") {
+        console.log(`Payment ${paymentId} not succeeded: ${payment.status}`);
+        return null;
+      }
+      
+      // Mapear Price IDs a créditos
+      const CREDITS_BY_PRICE = {
+        "price_1SJ0UWGdnHfsTKebUDHcFzL3": 10,  // Starter Pack ($4.99)
+        "price_1SJ0eSGdnHfsTKeb3RErkfWa": 30,  // Popular Pack ($12.99)
+      };
+      
+      // Intentar obtener el price ID de múltiples ubicaciones posibles
+      let priceId = null;
+      
+      // Método 1: items[0].price.id (estructura de Checkout Session)
+      if (payment.items && payment.items.length > 0 && payment.items[0].price) {
+        priceId = payment.items[0].price.id;
+        console.log(`Price ID found in items[0].price.id: ${priceId}`);
+      }
+      
+      // Método 2: price.id (estructura alternativa)
+      if (!priceId && payment.price && payment.price.id) {
+        priceId = payment.price.id;
+        console.log(`Price ID found in price.id: ${priceId}`);
+      }
+      
+      // Método 3: prices[0].id (estructura de suscripciones)
+      if (!priceId && payment.prices && payment.prices.length > 0) {
+        priceId = payment.prices[0].id;
+        console.log(`Price ID found in prices[0].id: ${priceId}`);
+      }
+      
+      // Método 4: Fallback por monto (si no se encuentra price ID)
+      if (!priceId && payment.amount) {
+        console.log(`No price ID found, using amount: ${payment.amount}`);
+        
+        // Identificar por monto (en centavos)
+        if (payment.amount === 499) {
+          priceId = "price_1SJ0UWGdnHfsTKebUDHcFzL3"; // Starter Pack
+          console.log(`Matched amount $4.99 to Starter Pack`);
+        } else if (payment.amount === 1299) {
+          priceId = "price_1SJ0eSGdnHfsTKeb3RErkfWa"; // Popular Pack
+          console.log(`Matched amount $12.99 to Popular Pack`);
+        }
+      }
+      
+      if (!priceId) {
+        console.error(`ERROR: No price ID found in payment ${paymentId}`);
+        console.error(`Payment structure:`, JSON.stringify(payment, null, 2));
+        return null;
+      }
+      
+      const credits = CREDITS_BY_PRICE[priceId];
+      
+      if (!credits) {
+        console.error(`ERROR: Unknown price ID: ${priceId}`);
+        console.error(`Known price IDs:`, Object.keys(CREDITS_BY_PRICE));
+        return null;
+      }
+      
+      // Agregar créditos al usuario
+      console.log(`Adding ${credits} credits to user ${userId}`);
+      
       await admin.firestore().collection("users").doc(userId).set(
         {
           credits: admin.firestore.FieldValue.increment(credits),
@@ -90,10 +126,12 @@ exports.grantCreditsOnPayment = onDocumentCreated(
         { merge: true }
       );
       
-      console.log(`Added ${credits} credits to user ${userId} from payment ${event.params.paymentId}`);
+      console.log(`SUCCESS: Added ${credits} credits to user ${userId} from payment ${paymentId}`);
       return null;
+      
     } catch (error) {
-      console.error(`Error adding credits to user ${userId}:`, error);
+      console.error(`CRITICAL ERROR in grantCreditsOnPayment:`, error);
+      console.error(`Error stack:`, error.stack);
       return null;
     }
   }
