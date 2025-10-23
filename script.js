@@ -227,6 +227,210 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // ==============================
+    // QUICK WINS UX: PASSWORD & VALIDATION
+    // ==============================
+    
+    // Password Strength Indicator
+    function checkPasswordStrength(password) {
+        const strengthBars = [
+            document.getElementById('strength-bar-1'),
+            document.getElementById('strength-bar-2'),
+            document.getElementById('strength-bar-3'),
+            document.getElementById('strength-bar-4')
+        ];
+        const strengthText = document.getElementById('password-strength-text');
+        
+        if (!password) {
+            strengthBars.forEach(bar => bar.style.backgroundColor = '#293038');
+            if (strengthText) strengthText.textContent = '';
+            return;
+        }
+        
+        let strength = 0;
+        
+        // Criteria
+        if (password.length >= 6) strength++;
+        if (password.length >= 10) strength++;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+        if (/\d/.test(password)) strength++;
+        if (/[^A-Za-z0-9]/.test(password)) strength++;
+        
+        // Normalize to 0-4 scale
+        strength = Math.min(4, Math.ceil(strength * 0.8));
+        
+        // Update bars
+        const colors = ['#ef4444', '#f59e0b', '#eab308', '#22c55e'];
+        const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+        
+        strengthBars.forEach((bar, index) => {
+            if (index < strength) {
+                bar.style.backgroundColor = colors[strength - 1];
+            } else {
+                bar.style.backgroundColor = '#293038';
+            }
+        });
+        
+        if (strengthText && strength > 0) {
+            strengthText.textContent = labels[strength - 1];
+            strengthText.style.color = colors[strength - 1];
+        }
+    }
+    
+    // Show/Hide Password Toggle
+    function setupPasswordToggles() {
+        const toggles = [
+            {
+                button: document.getElementById('toggle-login-password'),
+                input: document.getElementById('login-password-input'),
+                icon: document.getElementById('eye-icon-login')
+            },
+            {
+                button: document.getElementById('toggle-signup-password'),
+                input: document.getElementById('signup-password-input'),
+                icon: document.getElementById('eye-icon-signup')
+            },
+            {
+                button: document.getElementById('toggle-signup-confirm-password'),
+                input: document.getElementById('signup-confirm-password-input'),
+                icon: document.getElementById('eye-icon-signup-confirm')
+            }
+        ];
+        
+        toggles.forEach(({ button, input, icon }) => {
+            if (button && input) {
+                button.addEventListener('click', () => {
+                    const isPassword = input.type === 'password';
+                    input.type = isPassword ? 'text' : 'password';
+                    
+                    // Update icon
+                    if (icon) {
+                        if (isPassword) {
+                            // Show "eye-slash" icon
+                            icon.innerHTML = '<path d="M53.92 34.62L34.62 53.92C33.09 51.84 32 49.08 32 46C32 38.27 38.27 32 46 32C49.08 32 51.84 33.09 53.92 34.62ZM46 64C38.27 64 32 57.73 32 50C32 46.92 33.09 44.16 34.62 42.08L53.92 61.38C51.84 62.91 49.08 64 46 64ZM46 20C69 20 88 38 88 46C88 48.84 87.44 51.55 86.41 54L100.28 67.87C99.89 68.26 99.41 68.5 98.88 68.5C98.35 68.5 97.87 68.26 97.48 67.87L28.13 -1.48C27.74 -1.87 27.5 -2.35 27.5 -2.88C27.5 -3.41 27.74 -3.89 28.13 -4.28C28.91 -5.06 30.19 -5.06 30.97 -4.28L44.84 9.59C45.22 9.53 45.61 9.5 46 9.5C50.97 9.5 55 13.53 55 18.5C55 18.89 54.97 19.28 54.91 19.66L68.78 33.53C70.31 35.06 72 36.38 73.84 37.47L86.41 54C87.44 51.55 88 48.84 88 46C88 38 69 20 46 20Z"/>';
+                        } else {
+                            // Show "eye" icon (original)
+                            icon.innerHTML = '<path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"></path>';
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    // Email Validation
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+    
+    // Inline Form Validation for Signup
+    function setupInlineValidation() {
+        const signupEmailInput = document.getElementById('signup-email-input');
+        const signupEmailError = document.getElementById('signup-email-error');
+        const signupPasswordInput = document.getElementById('signup-password-input');
+        const signupConfirmPasswordInput = document.getElementById('signup-confirm-password-input');
+        const signupConfirmPasswordError = document.getElementById('signup-confirm-password-error');
+        
+        // Email validation
+        if (signupEmailInput && signupEmailError) {
+            signupEmailInput.addEventListener('blur', () => {
+                const email = signupEmailInput.value.trim();
+                if (email && !isValidEmail(email)) {
+                    signupEmailError.textContent = 'Please enter a valid email address';
+                } else {
+                    signupEmailError.textContent = '';
+                }
+            });
+            
+            signupEmailInput.addEventListener('input', () => {
+                if (signupEmailError.textContent && isValidEmail(signupEmailInput.value.trim())) {
+                    signupEmailError.textContent = '';
+                }
+            });
+        }
+        
+        // Password strength tracking
+        if (signupPasswordInput) {
+            signupPasswordInput.addEventListener('input', () => {
+                checkPasswordStrength(signupPasswordInput.value);
+            });
+        }
+        
+        // Confirm password validation
+        if (signupConfirmPasswordInput && signupPasswordInput && signupConfirmPasswordError) {
+            signupConfirmPasswordInput.addEventListener('input', () => {
+                const password = signupPasswordInput.value;
+                const confirmPassword = signupConfirmPasswordInput.value;
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    signupConfirmPasswordError.textContent = 'Passwords do not match';
+                } else {
+                    signupConfirmPasswordError.textContent = '';
+                }
+            });
+            
+            signupPasswordInput.addEventListener('input', () => {
+                const password = signupPasswordInput.value;
+                const confirmPassword = signupConfirmPasswordInput.value;
+                
+                if (confirmPassword && password !== confirmPassword) {
+                    signupConfirmPasswordError.textContent = 'Passwords do not match';
+                } else {
+                    signupConfirmPasswordError.textContent = '';
+                }
+            });
+        }
+    }
+    
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+        // Remove existing toasts
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification fixed bottom-4 right-4 px-6 py-4 rounded-xl shadow-lg z-50 flex items-center gap-3 transition-all duration-300 transform translate-y-0';
+        
+        const colors = {
+            success: 'bg-green-600 text-white',
+            error: 'bg-red-600 text-white',
+            info: 'bg-blue-600 text-white'
+        };
+        
+        const icons = {
+            success: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>',
+            error: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>',
+            info: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+        };
+        
+        toast.className += ' ' + colors[type];
+        toast.innerHTML = `
+            ${icons[type]}
+            <span class="font-semibold">${message}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Slide in animation
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Initialize all UX improvements
+    setupPasswordToggles();
+    setupInlineValidation();
+
     // Auth state observer
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -452,13 +656,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Setup social sharing
                     setupSocialSharing(resultImageUrl);
                     
-                    // Setup download button
+                    // Setup download button with toast confirmation
                     if (buttons.downloadArtwork) {
                         buttons.downloadArtwork.onclick = () => {
                             const a = document.createElement('a');
                             a.href = resultImageUrl;
-                            a.download = 'artwork.png';
+                            a.download = `artwork-${Date.now()}.png`;
                             a.click();
+                            
+                            // Show success toast
+                            showToast('✓ Artwork downloaded!', 'success');
                         };
                     }
                     

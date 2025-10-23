@@ -222,7 +222,14 @@
         </div>
         <div class="flex flex-col gap-4 w-full max-w-md mx-auto">
             <input id="login-email-input" type="email" placeholder="Email" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
-            <input id="login-password-input" type="password" placeholder="Password" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+            <div class="relative">
+                <input id="login-password-input" type="password" placeholder="Password" class="w-full h-12 px-4 pr-12 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+                <button type="button" id="toggle-login-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9dabb8] hover:text-white transition">
+                    <svg id="eye-icon-login" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"></path>
+                    </svg>
+                </button>
+            </div>
             <button id="email-login-button" class="flex items-center justify-center h-12 px-5 bg-[#1980e6] text-white text-base font-bold rounded-xl w-full">
                 <span>Sign In</span>
             </button>
@@ -243,9 +250,41 @@
             <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pr-12">Create Account</h2>
         </div>
         <div class="flex flex-col gap-4 w-full max-w-md mx-auto">
-            <input id="signup-email-input" type="email" placeholder="Email" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
-            <input id="signup-password-input" type="password" placeholder="Password" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
-            <input id="signup-confirm-password-input" type="password" placeholder="Confirm Password" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+            <!-- Email with validation -->
+            <div class="relative">
+                <input id="signup-email-input" type="email" placeholder="Email" class="w-full h-12 px-4 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+                <p id="signup-email-error" class="text-red-500 text-xs mt-1 h-4"></p>
+            </div>
+            
+            <!-- Password with show/hide and strength indicator -->
+            <div class="relative">
+                <input id="signup-password-input" type="password" placeholder="Password (min 6 characters)" class="w-full h-12 px-4 pr-12 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+                <button type="button" id="toggle-signup-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9dabb8] hover:text-white transition">
+                    <svg id="eye-icon-signup" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"></path>
+                    </svg>
+                </button>
+                <!-- Password Strength Indicator -->
+                <div class="flex gap-1 mt-2">
+                    <div id="strength-bar-1" class="h-1 flex-1 bg-[#293038] rounded transition-colors duration-300"></div>
+                    <div id="strength-bar-2" class="h-1 flex-1 bg-[#293038] rounded transition-colors duration-300"></div>
+                    <div id="strength-bar-3" class="h-1 flex-1 bg-[#293038] rounded transition-colors duration-300"></div>
+                    <div id="strength-bar-4" class="h-1 flex-1 bg-[#293038] rounded transition-colors duration-300"></div>
+                </div>
+                <p id="password-strength-text" class="text-xs text-[#9dabb8] mt-1 h-4"></p>
+            </div>
+            
+            <!-- Confirm Password with show/hide -->
+            <div class="relative">
+                <input id="signup-confirm-password-input" type="password" placeholder="Confirm Password" class="w-full h-12 px-4 pr-12 bg-[#293038] text-white rounded-xl border-none focus:ring-2 focus:ring-[#1980e6]">
+                <button type="button" id="toggle-signup-confirm-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#9dabb8] hover:text-white transition">
+                    <svg id="eye-icon-signup-confirm" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                        <path d="M247.31,124.76c-.35-.79-8.82-19.58-27.65-38.41C194.57,61.26,162.88,48,128,48S61.43,61.26,36.34,86.35C17.51,105.18,9,124,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208s66.57-13.26,91.66-38.34c18.83-18.83,27.3-37.61,27.65-38.4A8,8,0,0,0,247.31,124.76ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.47,133.47,0,0,1,25,128,133.33,133.33,0,0,1,48.07,97.25C70.33,75.19,97.22,64,128,64s57.67,11.19,79.93,33.25A133.46,133.46,0,0,1,231.05,128C223.84,141.46,192.43,192,128,192Zm0-112a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Z"></path>
+                    </svg>
+                </button>
+                <p id="signup-confirm-password-error" class="text-red-500 text-xs mt-1 h-4"></p>
+            </div>
+            
             <button id="email-signup-button" class="flex items-center justify-center h-12 px-5 bg-[#1980e6] text-white text-base font-bold rounded-xl w-full">
                 <span>Sign Up</span>
             </button>
@@ -260,18 +299,46 @@
     <!-- Other screens... -->
     <div id="upload-screen" class="screen flex-col items-center justify-center min-h-screen bg-[#111418] text-white p-4">
         <button id="logout-button" class="absolute top-4 right-4 text-sm text-gray-400 hover:text-white">Logout</button>
-        <div class="text-center">
+        <div class="text-center max-w-md mx-auto">
             <h2 id="user-greeting" class="text-2xl font-bold mb-2">Hello!</h2>
-            <p id="user-credits" class="text-lg mb-8">Loading credits...</p>
+            
+            <!-- Credits with Tooltip -->
+            <div class="flex items-center justify-center gap-2 mb-8">
+                <p id="user-credits" class="text-lg">Loading credits...</p>
+                <div class="relative group">
+                    <button class="text-[#9dabb8] hover:text-white transition cursor-help">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256">
+                            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z"></path>
+                        </svg>
+                    </button>
+                    <!-- Tooltip -->
+                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-[#293038] text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-64 z-10">
+                        <p class="font-semibold mb-1">How Credits Work</p>
+                        <p class="text-xs text-[#9dabb8] mb-2">1 credit = 1 AI transformation</p>
+                        <p class="text-xs text-[#9dabb8]">Credits never expire and can be used anytime. Get more credits to keep creating!</p>
+                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                            <div class="border-8 border-transparent border-t-[#293038]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
             <!-- This input is hidden, it's triggered by the button -->
-            <input type="file" id="file-upload" class="hidden" accept="image/*" />
+            <input type="file" id="file-upload" class="hidden" accept="image/jpeg,image/png,image/heic,image/jpg" />
 
             <!-- This is the visible button the user clicks -->
-            <button id="upload-button" class="bg-[#1980e6] text-white font-bold py-4 px-8 rounded-xl text-lg hover:bg-blue-700 transition duration-300">
+            <button id="upload-button" class="bg-[#1980e6] text-white font-bold py-4 px-8 rounded-xl text-lg hover:bg-blue-700 transition duration-300 mb-3">
                 Transform Your Photo
             </button>
-            <p class="text-sm text-gray-400 mt-4">Select a photo to begin the magic.</p>
+            
+            <!-- File Format Indicator -->
+            <p class="text-sm text-gray-400 mb-2">Select a photo to begin the magic.</p>
+            <div class="flex items-center justify-center gap-2 text-xs text-[#9dabb8]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z"></path>
+                </svg>
+                <span>JPG, PNG, HEIC • Max 10MB</span>
+            </div>
         </div>
     </div>
     <div id="processing-screen" class="screen flex-col items-center justify-center min-h-screen bg-[#111418] text-white p-4 text-center">
