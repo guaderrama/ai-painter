@@ -95,26 +95,178 @@ input[type="file"] {
     display: none;
 }
 
-/* Loading Area */
-.spinner {
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #4a90e2;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
+/* Loading Area - Brushstroke Animation */
+.brush-loader {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 40px auto;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
+.brush-stroke {
+    position: absolute;
+    width: 80px;
+    height: 8px;
+    background: linear-gradient(90deg, transparent, #1980e6, transparent);
+    border-radius: 4px;
+    opacity: 0;
+    transform-origin: center;
+}
+
+.brush-stroke:nth-child(1) {
+    top: 30%;
+    left: 10%;
+    transform: rotate(-15deg);
+    animation: paintStroke1 2s ease-in-out infinite;
+}
+
+.brush-stroke:nth-child(2) {
+    top: 50%;
+    left: 30%;
+    transform: rotate(20deg);
+    animation: paintStroke2 2s ease-in-out 0.3s infinite;
+}
+
+.brush-stroke:nth-child(3) {
+    top: 60%;
+    left: 15%;
+    transform: rotate(-25deg);
+    animation: paintStroke3 2s ease-in-out 0.6s infinite;
+}
+
+.brush-stroke:nth-child(4) {
+    top: 40%;
+    left: 50%;
+    transform: rotate(10deg);
+    animation: paintStroke4 2s ease-in-out 0.9s infinite;
+}
+
+.brush-stroke:nth-child(5) {
+    top: 70%;
+    left: 40%;
+    transform: rotate(-10deg);
+    animation: paintStroke5 2s ease-in-out 1.2s infinite;
+}
+
+@keyframes paintStroke1 {
+    0%, 100% { 
+        opacity: 0;
+        transform: rotate(-15deg) scaleX(0);
     }
+    50% { 
+        opacity: 0.8;
+        transform: rotate(-15deg) scaleX(1);
+    }
+}
+
+@keyframes paintStroke2 {
+    0%, 100% { 
+        opacity: 0;
+        transform: rotate(20deg) scaleX(0);
+    }
+    50% { 
+        opacity: 0.9;
+        transform: rotate(20deg) scaleX(1);
+    }
+}
+
+@keyframes paintStroke3 {
+    0%, 100% { 
+        opacity: 0;
+        transform: rotate(-25deg) scaleX(0);
+    }
+    50% { 
+        opacity: 0.7;
+        transform: rotate(-25deg) scaleX(1);
+    }
+}
+
+@keyframes paintStroke4 {
+    0%, 100% { 
+        opacity: 0;
+        transform: rotate(10deg) scaleX(0);
+    }
+    50% { 
+        opacity: 0.85;
+        transform: rotate(10deg) scaleX(1);
+    }
+}
+
+@keyframes paintStroke5 {
+    0%, 100% { 
+        opacity: 0;
+        transform: rotate(-10deg) scaleX(0);
+    }
+    50% { 
+        opacity: 0.75;
+        transform: rotate(-10deg) scaleX(1);
+    }
+}
+
+.canvas-text {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #9dabb8;
+    font-size: 14px;
+    font-style: italic;
+    white-space: nowrap;
 }
 
 #loading-message {
     font-size: 1.1em;
     color: #555;
+    margin-top: 20px;
+}
+
+/* Reveal Animation for Result */
+.artwork-reveal {
+    animation: revealArtwork 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center;
+}
+
+@keyframes revealArtwork {
+    0% { 
+        opacity: 0;
+        filter: blur(20px);
+        transform: scale(0.95);
+    }
+    40% {
+        opacity: 1;
+        filter: blur(10px);
+        transform: scale(0.97);
+    }
+    70% {
+        filter: blur(3px);
+        transform: scale(0.99);
+    }
+    100% { 
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+}
+
+/* Celebration effect (optional) */
+.confetti-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #1980e6;
+    opacity: 0;
+    animation: confettiFall 1.5s ease-out forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(100px) rotate(360deg);
+    }
 }
 
 /* Result Area */

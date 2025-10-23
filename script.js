@@ -463,6 +463,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     
                     showScreen("result");
+                    
+                    // 🎨 Apply reveal animation to transformed image
+                    setTimeout(() => {
+                        if (transformedImg) {
+                            transformedImg.classList.add('artwork-reveal');
+                        }
+                    }, 100);
                 } else if (response.status === 402) {
                     completeProcessing();
                     await new Promise(resolve => setTimeout(resolve, 500));
