@@ -324,7 +324,7 @@
             </div>
             
             <!-- This input is hidden, it's triggered by the button -->
-            <input type="file" id="file-upload" class="hidden" accept="image/jpeg,image/png,image/heic,image/jpg" />
+            <input type="file" id="file-upload" class="hidden" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" />
 
             <!-- This is the visible button the user clicks -->
             <button id="upload-button" class="bg-[#1980e6] text-white font-bold py-4 px-8 rounded-xl text-lg hover:bg-blue-700 transition duration-300 mb-3">
@@ -341,7 +341,7 @@
             </div>
         </div>
     </div>
-    <div id="processing-screen" class="screen flex-col items-center justify-center min-h-screen bg-[#111418] text-white p-4 text-center">
+    <div id="processing-screen" class="screen flex-col items-center justify-start pt-[15vh] bg-[#111418] text-white p-4 text-center">
         <div class="w-full max-w-md">
             <!-- Brushstroke Animation -->
             <div class="brush-loader">
@@ -683,6 +683,10 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Legacy script.js kept as backup - remove after testing -->
+    <!-- <script src="script.js"></script> -->
+
+    <!-- New modular architecture -->
+    <script type="module" src="src/main.js"></script>
 </body>
 </html>

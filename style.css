@@ -1,13 +1,30 @@
+/* ============================================
+   ROOT ELEMENTS - Prevent Layout Shifts
+   ============================================ */
+html {
+    /* Lock the viewport */
+    height: 100%;
+    overflow: hidden;
+    /* Prevent iOS text size adjustment */
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     font-family: 'Arial', sans-serif;
-    background-color: #f0f2f5;
+    /* Dark background to match screens */
+    background-color: #111418;
     color: #333;
     margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    padding: 0;
+    /* NO flexbox centering - screens handle their own layout */
+    display: block;
+    /* Fixed height - no min-height that could resize */
+    height: 100%;
+    /* Prevent any overflow that might cause layout shifts */
+    overflow: hidden;
+    /* Prevent iOS bounce scroll */
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
 }
 
@@ -95,111 +112,260 @@ input[type="file"] {
     display: none;
 }
 
-/* Loading Area - Brushstroke Animation */
+/* Loading Area - Artistic Brushstroke Animation */
 .brush-loader {
     position: relative;
-    width: 200px;
-    height: 200px;
-    margin: 40px auto;
+    width: 220px;
+    height: 220px;
+    /* Fixed margins to prevent layout shifts */
+    margin: 0 auto 40px auto;
+    /* Prevent any flex resizing */
+    flex-shrink: 0;
+    flex-grow: 0;
+    /* Canvas background */
+    background: radial-gradient(ellipse at center, rgba(25, 128, 230, 0.05) 0%, transparent 70%);
+    border-radius: 12px;
 }
 
+/* ============================================
+   SCREEN STYLES - Full viewport coverage
+   ============================================ */
+
+/* All screens take full viewport */
+.screen.active {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Processing screen - no scrolling, fixed layout */
+#processing-screen.screen.active {
+    overflow: hidden;
+}
+
+/* Fixed height for inspirational message to prevent text reflow */
+#inspirational-message {
+    min-height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Result screen - allow scrolling for content */
+#result-screen.screen.active {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Artistic brush stroke styles */
 .brush-stroke {
     position: absolute;
-    width: 80px;
-    height: 8px;
-    background: linear-gradient(90deg, transparent, #1980e6, transparent);
-    border-radius: 4px;
+    border-radius: 50% 20% 50% 20%;
     opacity: 0;
-    transform-origin: center;
+    transform-origin: left center;
+    /* More realistic brush texture */
+    filter: blur(0.5px);
 }
 
+/* Main colorful strokes - Fauvist palette */
 .brush-stroke:nth-child(1) {
-    top: 30%;
-    left: 10%;
-    transform: rotate(-15deg);
-    animation: paintStroke1 2s ease-in-out infinite;
+    top: 25%;
+    left: 15%;
+    width: 90px;
+    height: 12px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #e63946 20%,
+        #ff6b6b 50%,
+        #e63946 80%,
+        transparent 100%);
+    transform: rotate(-12deg);
+    animation: artisticStroke1 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 .brush-stroke:nth-child(2) {
-    top: 50%;
-    left: 30%;
-    transform: rotate(20deg);
-    animation: paintStroke2 2s ease-in-out 0.3s infinite;
+    top: 45%;
+    left: 25%;
+    width: 100px;
+    height: 14px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #1980e6 15%,
+        #4dabf7 50%,
+        #1980e6 85%,
+        transparent 100%);
+    transform: rotate(18deg);
+    animation: artisticStroke2 3s cubic-bezier(0.4, 0, 0.2, 1) 0.4s infinite;
 }
 
 .brush-stroke:nth-child(3) {
     top: 60%;
-    left: 15%;
-    transform: rotate(-25deg);
-    animation: paintStroke3 2s ease-in-out 0.6s infinite;
+    left: 10%;
+    width: 85px;
+    height: 10px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #f4a261 20%,
+        #ffb347 50%,
+        #f4a261 80%,
+        transparent 100%);
+    transform: rotate(-22deg);
+    animation: artisticStroke3 3s cubic-bezier(0.4, 0, 0.2, 1) 0.8s infinite;
 }
 
 .brush-stroke:nth-child(4) {
-    top: 40%;
-    left: 50%;
-    transform: rotate(10deg);
-    animation: paintStroke4 2s ease-in-out 0.9s infinite;
+    top: 35%;
+    left: 45%;
+    width: 75px;
+    height: 11px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #2a9d8f 15%,
+        #52c7b8 50%,
+        #2a9d8f 85%,
+        transparent 100%);
+    transform: rotate(8deg);
+    animation: artisticStroke4 3s cubic-bezier(0.4, 0, 0.2, 1) 1.2s infinite;
 }
 
 .brush-stroke:nth-child(5) {
     top: 70%;
-    left: 40%;
-    transform: rotate(-10deg);
-    animation: paintStroke5 2s ease-in-out 1.2s infinite;
+    left: 35%;
+    width: 95px;
+    height: 13px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        #9b5de5 20%,
+        #c77dff 50%,
+        #9b5de5 80%,
+        transparent 100%);
+    transform: rotate(-8deg);
+    animation: artisticStroke5 3s cubic-bezier(0.4, 0, 0.2, 1) 1.6s infinite;
 }
 
-@keyframes paintStroke1 {
-    0%, 100% { 
+/* Artistic stroke animations with paint drip effect */
+@keyframes artisticStroke1 {
+    0% {
         opacity: 0;
-        transform: rotate(-15deg) scaleX(0);
+        transform: rotate(-12deg) scaleX(0) translateX(-10px);
+        filter: blur(2px);
     }
-    50% { 
-        opacity: 0.8;
-        transform: rotate(-15deg) scaleX(1);
-    }
-}
-
-@keyframes paintStroke2 {
-    0%, 100% { 
-        opacity: 0;
-        transform: rotate(20deg) scaleX(0);
-    }
-    50% { 
+    20% {
         opacity: 0.9;
-        transform: rotate(20deg) scaleX(1);
+        filter: blur(0.5px);
     }
-}
-
-@keyframes paintStroke3 {
-    0%, 100% { 
-        opacity: 0;
-        transform: rotate(-25deg) scaleX(0);
+    50% {
+        opacity: 1;
+        transform: rotate(-12deg) scaleX(1.1) translateX(0);
+        filter: blur(0);
     }
-    50% { 
+    80% {
         opacity: 0.7;
-        transform: rotate(-25deg) scaleX(1);
+        transform: rotate(-12deg) scaleX(1) translateX(5px);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(-12deg) scaleX(0.8) translateX(10px);
+        filter: blur(1px);
     }
 }
 
-@keyframes paintStroke4 {
-    0%, 100% { 
+@keyframes artisticStroke2 {
+    0% {
         opacity: 0;
-        transform: rotate(10deg) scaleX(0);
+        transform: rotate(18deg) scaleX(0) translateX(-15px);
+        filter: blur(2px);
     }
-    50% { 
+    25% {
+        opacity: 0.95;
+        filter: blur(0.3px);
+    }
+    55% {
+        opacity: 1;
+        transform: rotate(18deg) scaleX(1.05) translateX(0);
+        filter: blur(0);
+    }
+    85% {
+        opacity: 0.6;
+        transform: rotate(18deg) scaleX(0.95) translateX(8px);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(18deg) scaleX(0.7) translateX(15px);
+        filter: blur(1.5px);
+    }
+}
+
+@keyframes artisticStroke3 {
+    0% {
+        opacity: 0;
+        transform: rotate(-22deg) scaleX(0) translateX(-8px);
+        filter: blur(1.5px);
+    }
+    30% {
         opacity: 0.85;
-        transform: rotate(10deg) scaleX(1);
+        filter: blur(0.5px);
+    }
+    60% {
+        opacity: 1;
+        transform: rotate(-22deg) scaleX(1.15) translateX(0);
+        filter: blur(0);
+    }
+    90% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(-22deg) scaleX(0.9) translateX(12px);
+        filter: blur(2px);
     }
 }
 
-@keyframes paintStroke5 {
-    0%, 100% { 
+@keyframes artisticStroke4 {
+    0% {
         opacity: 0;
-        transform: rotate(-10deg) scaleX(0);
+        transform: rotate(8deg) scaleX(0) translateX(-12px);
+        filter: blur(2px);
     }
-    50% { 
-        opacity: 0.75;
-        transform: rotate(-10deg) scaleX(1);
+    35% {
+        opacity: 0.9;
+        filter: blur(0.3px);
+    }
+    65% {
+        opacity: 1;
+        transform: rotate(8deg) scaleX(1.08) translateX(0);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(8deg) scaleX(0.85) translateX(10px);
+        filter: blur(1.5px);
+    }
+}
+
+@keyframes artisticStroke5 {
+    0% {
+        opacity: 0;
+        transform: rotate(-8deg) scaleX(0) translateX(-10px);
+        filter: blur(2px);
+    }
+    40% {
+        opacity: 0.88;
+        filter: blur(0.5px);
+    }
+    70% {
+        opacity: 1;
+        transform: rotate(-8deg) scaleX(1.12) translateX(0);
+        filter: blur(0);
+    }
+    100% {
+        opacity: 0;
+        transform: rotate(-8deg) scaleX(0.75) translateX(15px);
+        filter: blur(2px);
     }
 }
 
