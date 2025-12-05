@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr list:*)",
+      "Bash(cat:*)",
+      "Bash(npx firebase-tools:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(dir /s /b \"c:\\Users\\ivang\\Dropbox\\Ai\\ai painter\")",
+      "Bash(mkdir -p:*)",
+      "Bash(firebase login:*)",
+      "Bash(npm install)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(node -c:*)",
+      "Bash(echo $FIREBASE_TOKEN)",
+      "Bash(echo:*)",
+      "Bash(dir /b \"%USERPROFILE%\\.config\\configstore\")",
+      "Bash(dir /b \"C:\\Users\\ivang\\.config\")",
+      "Bash(gcloud auth:*)",
+      "Bash(gcloud config get-value:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat(functions): upgrade to Gemini 3 Pro Image model\n\n- Update SDK from @google/generative-ai to @google/genai@1.31.0\n- Change model from gemini-2.5-flash-image to gemini-3-pro-image-preview\n- Update SDK initialization pattern for new API\n- Add security rules to .gitignore for MCP config files\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfix(ui): resolve layout shift bug on processing screen\n\nRoot cause: body had flexbox centering that re-centered content\nwhen processing screen content changed (messages, progress).\n\nChanges:\n- html/body: Remove flexbox centering, use display: block\n- html/body: Add overflow: hidden to prevent resize\n- .screen.active: Use position: absolute for full viewport\n- processing-screen: Use justify-start + padding instead of center\n- Brush strokes: Improved Fauvist color palette and animations\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(gh pr create:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
