@@ -64,6 +64,21 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.*
+!.env.example
+
+# MCP config files (contain API keys)
+.mcp.json
+mcp.json.json
+
+# Sensitive config files
+supabase-config.js
+**/serviceAccountKey.json
+**/firebase-adminsdk*.json
+
+# Temporary files
+nul
 
 # dataconnect generated files
 .dataconnect
+.firebase/logs/

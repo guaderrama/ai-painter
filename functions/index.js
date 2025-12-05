@@ -1,9 +1,14 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { defineSecret } = require("firebase-functions/params");
+
+// Define el secret para la API key de Gemini
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const admin = require("firebase-admin");
 const express = require("express");
 const Jimp = require("jimp");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
+const convert = require("heic-convert");
 
 admin.initializeApp();
 
@@ -252,23 +257,87 @@ app.post("/generate", async (req, res) => {
     // Download image from Firebase Storage
     let imageBuffer;
     try {
-      const bucket = admin.storage().bucket("ai-painter-app-uploads-2025");
-      const file = bucket.file(imageUrl.replace(`gs://${bucket.name}/`, ''));
+      console.log("Downloading image from Storage URL:", imageUrl);
+      
+      // Extract bucket name and file path from gs:// URL
+      const gsUrlMatch = imageUrl.match(/^gs:\/\/([^\/]+)\/(.+)$/);
+      if (!gsUrlMatch) {
+        throw new Error("Invalid Storage URL format");
+      }
+      
+      const bucketName = gsUrlMatch[1];
+      const filePath = gsUrlMatch[2];
+      
+      console.log("Bucket:", bucketName, "File path:", filePath);
+      
+      const bucket = admin.storage().bucket(bucketName);
+      const file = bucket.file(filePath);
       [imageBuffer] = await file.download();
-      console.log("Original image buffer downloaded. Size:", imageBuffer.length, "bytes.");
+      
+      console.log("✓ Image downloaded successfully. Size:", imageBuffer.length, "bytes");
     } catch (downloadError) {
-      console.error("Error descargando imagen de Storage: ", downloadError);
-      return res.status(500).json({ error: "Error al procesar la imagen desde Storage." });
+      console.error("ERROR downloading from Storage:");
+      console.error("Error message:", downloadError.message);
+      console.error("Error stack:", downloadError.stack);
+      return res.status(500).json({ 
+        error: "Error al descargar la imagen de Storage.",
+        details: downloadError.message 
+      });
+    }
+
+    // Convert HEIC to PNG if necessary
+    let processedBuffer = imageBuffer;
+    try {
+      // Detect HEIC format by checking the file signature (magic bytes)
+      // HEIC files start with specific bytes at offset 4
+      const isHEIC = imageBuffer.length > 12 && 
+                     (imageBuffer.toString('ascii', 4, 8) === 'ftyp' && 
+                      (imageBuffer.toString('ascii', 8, 12) === 'heic' || 
+                       imageBuffer.toString('ascii', 8, 12) === 'mif1' ||
+                       imageBuffer.toString('ascii', 8, 12) === 'msf1' ||
+                       imageBuffer.toString('ascii', 8, 12) === 'hevc'));
+      
+      if (isHEIC) {
+        console.log("HEIC format detected, converting to PNG...");
+        
+        const outputBuffer = await convert({
+          buffer: imageBuffer,
+          format: 'PNG',
+          quality: 1  // Maximum quality for PNG
+        });
+        
+        processedBuffer = outputBuffer;
+        console.log("✓ HEIC converted to PNG successfully. New size:", processedBuffer.length, "bytes");
+      } else {
+        console.log("Non-HEIC format, proceeding with original buffer");
+      }
+    } catch (heicError) {
+      console.error("ERROR converting HEIC:");
+      console.error("Error message:", heicError.message);
+      console.error("Error stack:", heicError.stack);
+      return res.status(500).json({ 
+        error: "Error al convertir imagen HEIC.",
+        details: heicError.message 
+      });
     }
 
     // Resize image using Jimp - Preserve aspect ratio
     let resizedImageBuffer;
     try {
-      const image = await Jimp.read(imageBuffer);
+      console.log("Starting Jimp processing. Buffer size:", processedBuffer.length);
+      
+      // Validate buffer
+      if (!processedBuffer || processedBuffer.length === 0) {
+        throw new Error("Image buffer is empty");
+      }
+      
+      const image = await Jimp.read(processedBuffer);
+      console.log("Jimp successfully read image");
       
       // Get original dimensions
       const width = image.bitmap.width;
       const height = image.bitmap.height;
+      console.log(`Original dimensions: ${width}x${height}`);
       
       // Calculate new dimensions preserving aspect ratio
       // Max dimension will be 1024px
@@ -285,67 +354,107 @@ app.post("/generate", async (req, res) => {
         newWidth = Jimp.AUTO; // Jimp will calculate proportionally
       }
       
+      console.log(`Resizing to: ${newWidth === Jimp.AUTO ? 'AUTO' : newWidth}x${newHeight === Jimp.AUTO ? 'AUTO' : newHeight}`);
+      
       await image.resize(newWidth, newHeight);
+      console.log("Resize completed");
+      
       resizedImageBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
+      console.log(`Final buffer size: ${resizedImageBuffer.length} bytes`);
 
-      console.log(`Resized image preserving aspect ratio. Original: ${width}x${height}, New: ${newWidth === Jimp.AUTO ? 'AUTO' : newWidth}x${newHeight === Jimp.AUTO ? 'AUTO' : newHeight}, Size: ${resizedImageBuffer.length} bytes.`);
     } catch (jimpError) {
-      console.error("Error redimensionando imagen con Jimp: ", jimpError);
-      return res.status(500).json({ error: "Error al redimensionar la imagen." });
+      console.error("JIMP ERROR Details:");
+      console.error("Error message:", jimpError.message);
+      console.error("Error stack:", jimpError.stack);
+      console.error("Buffer length:", processedBuffer ? processedBuffer.length : 'null');
+      console.error("Buffer type:", typeof processedBuffer);
+      
+      return res.status(500).json({ 
+        error: "Error al redimensionar la imagen.",
+        details: jimpError.message 
+      });
     }
 
-    // Usar Gemini 2.5 Flash Image para generación/edición de imágenes
-    const apiKey = "AIzaSyDdc-34P2AQWnMx1p3iW0mUqShqyfLZ17k";
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+    // Usar Gemini 3 Pro Image (Nano Banana Pro) para generación/edición de imágenes
+    // La API key se obtiene del secret configurado en Firebase
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error("ERROR: GEMINI_API_KEY secret not configured");
+      return res.status(500).json({ error: "Error de configuración del servidor." });
+    }
+
+    // Inicializar el nuevo SDK de Google GenAI
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = "Edit this image to transform it into a Fauvist painting with bold, unnatural colors, expressive brushstrokes, and vivid colors. Return the edited image.";
 
     // Convertir buffer a base64 para Gemini
     const imageBase64 = resizedImageBuffer.toString("base64");
-    
-    const imagePart = {
-      inlineData: {
-        data: imageBase64,
-        mimeType: "image/png",
-      },
-    };
 
-    // Generar contenido con imagen
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = result.response;
-    
+    // Generar contenido con imagen usando el nuevo SDK
+    console.log("Calling Gemini 3 Pro Image (gemini-3-pro-image-preview)...");
+    const result = await ai.models.generateContent({
+      model: "gemini-3-pro-image-preview",
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: "image/png",
+                data: imageBase64,
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    console.log("Gemini response received");
+
     // Extraer la imagen generada de la respuesta
-    // Gemini 2.5 Flash Image devuelve la imagen en parts
+    // El nuevo SDK devuelve la respuesta en un formato diferente
     let generatedImageBase64 = null;
-    
-    if (response.candidates && response.candidates[0]) {
-      const candidate = response.candidates[0];
+
+    if (result.candidates && result.candidates[0]) {
+      const candidate = result.candidates[0];
       if (candidate.content && candidate.content.parts) {
         for (const part of candidate.content.parts) {
           if (part.inlineData && part.inlineData.data) {
             generatedImageBase64 = part.inlineData.data;
+            console.log("✓ Generated image found in response");
             break;
           }
         }
       }
     }
     
-    // Si no encontramos imagen, usar la original
+    // ✅ VALIDAR que Gemini generó una imagen transformada
     if (!generatedImageBase64) {
-      console.log("No se generó imagen, usando original");
-      generatedImageBase64 = imageBase64;
+      console.error("ERROR: Gemini no generó imagen transformada");
+      console.error(
+          "Response structure:",
+          JSON.stringify(response, null, 2),
+      );
+      // NO descontar crédito si falla la transformación
+      const errorMsg = "No se pudo transformar tu imagen a arte. " +
+                       "Por favor intenta con otra foto o " +
+                       "contacta soporte.";
+      return res.status(500).json({
+        error: errorMsg,
+        details: "Gemini no generó una imagen transformada",
+      });
     }
-
-    // Descontar crédito
+    // Descontar crédito solo si la transformación fue exitosa
     await admin.firestore().runTransaction(async (transaction) => {
       const freshUserDoc = await transaction.get(userRef);
       const newCredits = freshUserDoc.data().credits - 1;
-      transaction.update(userRef, { credits: newCredits });
+      transaction.update(userRef, {credits: newCredits});
     });
 
-    res.json({ 
-      imageBase64: generatedImageBase64
+    res.json({
+      imageBase64: generatedImageBase64,
     });
 
   } catch (error) {
@@ -354,10 +463,11 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-// Exportar la función
-exports.api = onRequest({ 
+// Exportar la función con acceso al secret
+exports.api = onRequest({
   region: "us-central1",
   memory: "1GiB",
   timeoutSeconds: 300,
-  concurrency: 1
+  concurrency: 1,
+  secrets: [geminiApiKey]  // Dar acceso al secret
 }, app);
