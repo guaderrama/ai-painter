@@ -70,6 +70,8 @@ exports.grantCreditsOnPayment = onDocumentCreated(
       const CREDITS_BY_PRICE = {
         "price_1SJ0UWGdnHfsTKebUDHcFzL3": 10,  // Starter Pack ($4.99)
         "price_1SJ0eSGdnHfsTKeb3RErkfWa": 30,  // Popular Pack ($12.99)
+        "price_1Sb955GdnHfsTKebNLgWcpdc": 50,  // Pro Pack ($19.99)
+        "price_1Sb95BGdnHfsTKebUlBo75LW": 100, // Artist Pack ($34.99)
       };
       
       // Intentar obtener el price ID de múltiples ubicaciones posibles

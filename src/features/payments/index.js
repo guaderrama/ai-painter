@@ -109,7 +109,15 @@ async function handlePurchase(button) {
 
         // Wait for the Stripe extension to create the session
         checkoutSessionRef.onSnapshot(async (snap) => {
-            const { error, sessionId } = snap.data();
+            const data = snap.data();
+
+            // Skip if data is not ready yet
+            if (!data) {
+                console.log('Waiting for checkout session data...');
+                return;
+            }
+
+            const { error, sessionId, url } = data;
 
             if (error) {
                 alert(`An error occurred: ${error.message}`);
@@ -118,6 +126,13 @@ async function handlePurchase(button) {
                 return;
             }
 
+            // Handle redirect URL (newer extension versions)
+            if (url) {
+                window.location.assign(url);
+                return;
+            }
+
+            // Handle sessionId (older extension versions)
             if (sessionId) {
                 const { error: stripeError } = await stripe.redirectToCheckout({
                     sessionId

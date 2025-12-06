@@ -7,8 +7,8 @@
 export const STRIPE_PRICES = {
     starter: 'price_1SJ0UWGdnHfsTKebUDHcFzL3',
     popular: 'price_1SJ0eSGdnHfsTKeb3RErkfWa',
-    pro: 'price_REPLACE_WITH_YOUR_PRO_PRICE_ID',
-    artist: 'price_REPLACE_WITH_YOUR_ARTIST_PRICE_ID',
+    pro: 'price_1Sb955GdnHfsTKebNLgWcpdc',
+    artist: 'price_1Sb95BGdnHfsTKebUlBo75LW',
 };
 
 // Stripe Publishable Key
