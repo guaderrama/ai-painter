@@ -12,6 +12,39 @@ const convert = require("heic-convert");
 
 admin.initializeApp();
 
+// ============================================
+// RATE LIMITING (in-memory, resets on cold start)
+// ============================================
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 10; // max 10 requests per minute per user
+
+function checkRateLimit(userId) {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+
+  if (!userLimit || now - userLimit.windowStart > RATE_LIMIT_WINDOW) {
+    rateLimitMap.set(userId, { windowStart: now, count: 1 });
+    return true;
+  }
+
+  if (userLimit.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  userLimit.count++;
+  return true;
+}
+
+// Allowed image MIME types
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
+
 // INITIALIZE USER WITH FREE CREDITS
 // ==============================
 // Esta función se ejecuta cuando la Firebase Extension crea un documento
@@ -229,6 +262,12 @@ app.post("/ensure-user", async (req, res) => {
 // Endpoint para generar imágenes
 app.post("/generate", async (req, res) => {
   try {
+    // Security: Validate Content-Type
+    const contentType = req.headers['content-type'];
+    if (!contentType || !contentType.includes('application/json')) {
+      return res.status(415).json({ error: "Content-Type must be application/json" });
+    }
+
     // Verificar autenticación
     if (!req.headers.authorization || !req.headers.authorization.startsWith("Bearer ")) {
       return res.status(403).json({ error: "Usuario no autenticado." });
@@ -243,6 +282,12 @@ app.post("/generate", async (req, res) => {
     }
 
     const userId = decodedToken.uid;
+
+    // Security: Rate limiting per user
+    if (!checkRateLimit(userId)) {
+      return res.status(429).json({ error: "Demasiadas solicitudes. Intenta en un minuto." });
+    }
+
     const userRef = admin.firestore().collection("users").doc(userId);
 
     const userDoc = await userRef.get();
@@ -291,6 +336,12 @@ app.post("/generate", async (req, res) => {
       const [metadata] = await file.getMetadata();
       if (metadata.size > MAX_FILE_SIZE) {
         throw new Error(`File too large: ${metadata.size} bytes (max ${MAX_FILE_SIZE})`);
+      }
+
+      // Security: Validate MIME type
+      const mimeType = metadata.contentType;
+      if (!mimeType || !ALLOWED_MIME_TYPES.has(mimeType)) {
+        throw new Error(`Invalid file type: ${mimeType}`);
       }
 
       [imageBuffer] = await file.download();
@@ -410,8 +461,11 @@ app.post("/generate", async (req, res) => {
     const imageBase64 = resizedImageBuffer.toString("base64");
 
     // Generar contenido con imagen usando el nuevo SDK
+    // Security: Add timeout to prevent hanging requests
+    const GEMINI_TIMEOUT = 120000; // 2 minutes
     console.log("Calling Gemini 3 Pro Image (gemini-3-pro-image-preview)...");
-    const result = await ai.models.generateContent({
+
+    const geminiPromise = ai.models.generateContent({
       model: "gemini-3-pro-image-preview",
       contents: [
         {
@@ -428,6 +482,12 @@ app.post("/generate", async (req, res) => {
         },
       ],
     });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Gemini API timeout')), GEMINI_TIMEOUT);
+    });
+
+    const result = await Promise.race([geminiPromise, timeoutPromise]);
 
     console.log("Gemini response received");
 

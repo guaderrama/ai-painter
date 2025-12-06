@@ -108,7 +108,8 @@ async function handlePurchase(button) {
             });
 
         // Wait for the Stripe extension to create the session
-        checkoutSessionRef.onSnapshot(async (snap) => {
+        // Store unsubscribe to prevent memory leak
+        const unsubscribe = checkoutSessionRef.onSnapshot(async (snap) => {
             const data = snap.data();
 
             // Skip if data is not ready yet
@@ -120,6 +121,7 @@ async function handlePurchase(button) {
             const { error, sessionId, url } = data;
 
             if (error) {
+                unsubscribe(); // Cleanup listener
                 alert(`An error occurred: ${error.message}`);
                 button.disabled = false;
                 button.textContent = 'Buy Now';
@@ -128,12 +130,14 @@ async function handlePurchase(button) {
 
             // Handle redirect URL (newer extension versions)
             if (url) {
+                unsubscribe(); // Cleanup listener before redirect
                 window.location.assign(url);
                 return;
             }
 
             // Handle sessionId (older extension versions)
             if (sessionId) {
+                unsubscribe(); // Cleanup listener before redirect
                 const { error: stripeError } = await stripe.redirectToCheckout({
                     sessionId
                 });
