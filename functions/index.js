@@ -410,8 +410,8 @@ app.post("/generate", async (req, res) => {
       console.log(`Original dimensions: ${width}x${height}`);
       
       // Calculate new dimensions preserving aspect ratio
-      // Max dimension will be 1024px
-      const maxDimension = 1024;
+      // Max dimension will be 1536px (good balance of quality and speed)
+      const maxDimension = 1536;
       let newWidth, newHeight;
       
       if (width > height) {
