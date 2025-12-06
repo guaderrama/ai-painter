@@ -115,30 +115,24 @@ input[type="file"] {
 /* Loading Area - Artist at Work Canvas Animation */
 .brush-loader {
     position: relative;
-    width: 240px;
-    height: 200px;
+    width: 260px;
+    height: 180px;
     /* Fixed margins to prevent layout shifts */
     margin: 0 auto 40px auto;
     /* Prevent any flex resizing */
     flex-shrink: 0;
     flex-grow: 0;
-    /* Canvas texture background */
-    background:
-        linear-gradient(135deg, rgba(255,255,255,0.03) 25%, transparent 25%),
-        linear-gradient(225deg, rgba(255,255,255,0.03) 25%, transparent 25%),
-        linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%),
-        linear-gradient(315deg, rgba(255,255,255,0.03) 25%, transparent 25%),
-        linear-gradient(to bottom, #1a1d21, #0d0f12);
-    background-size: 8px 8px, 8px 8px, 8px 8px, 8px 8px, 100% 100%;
-    /* Golden frame effect */
-    border: 3px solid #8b7355;
+    /* Clean canvas - cream/beige like real canvas */
+    background: linear-gradient(145deg, #f5f0e6 0%, #ebe4d4 50%, #e0d8c8 100%);
+    /* Elegant wood frame */
+    border: 6px solid #654321;
+    border-image: linear-gradient(135deg, #8B4513 0%, #A0522D 25%, #654321 50%, #8B4513 75%, #A0522D 100%) 1;
     box-shadow:
-        inset 0 0 20px rgba(0,0,0,0.5),
-        0 0 0 1px #5c4d3d,
-        0 0 0 4px #a08060,
-        0 0 0 5px #5c4d3d,
-        0 8px 20px rgba(0,0,0,0.4);
-    border-radius: 4px;
+        inset 0 0 30px rgba(0,0,0,0.15),
+        inset 0 0 5px rgba(139,69,19,0.3),
+        0 4px 15px rgba(0,0,0,0.4),
+        0 2px 5px rgba(0,0,0,0.2);
+    border-radius: 2px;
     overflow: hidden;
 }
 
@@ -176,266 +170,282 @@ input[type="file"] {
     overflow-x: hidden;
 }
 
-/* Artistic brush stroke styles - Van Gogh Swirl Effect */
+/* Realistic Paint Brush Strokes */
 .brush-stroke {
     position: absolute;
-    border-radius: 40% 60% 60% 40% / 60% 30% 70% 40%;
     opacity: 0;
-    transform-origin: center center;
-    /* Paint texture with glow */
-    filter: blur(0.3px);
-    box-shadow: 0 0 8px currentColor;
+    transform-origin: left center;
 }
 
-/* Main colorful strokes - Fauvist palette with swirl positions */
+/* Stroke 1 - Cadmium Red - thick impasto stroke */
 .brush-stroke:nth-child(1) {
-    top: 15%;
-    left: 10%;
+    top: 12%;
+    left: -10px;
+    width: 140px;
+    height: 22px;
+    background:
+        radial-gradient(ellipse 80% 50% at 30% 50%, rgba(255,255,255,0.4) 0%, transparent 50%),
+        linear-gradient(90deg,
+            transparent 0%,
+            #c41e3a 5%,
+            #e63946 15%,
+            #ff4d5a 35%,
+            #e63946 55%,
+            #c41e3a 75%,
+            #8b0000 90%,
+            transparent 100%);
+    border-radius: 60% 40% 50% 50% / 80% 60% 40% 70%;
+    box-shadow:
+        1px 2px 3px rgba(0,0,0,0.3),
+        inset 0 -2px 4px rgba(0,0,0,0.2),
+        inset 0 2px 4px rgba(255,255,255,0.3);
+    animation: paintStroke1 5s ease-out infinite;
+}
+
+/* Stroke 2 - Cobalt Blue - sweeping stroke */
+.brush-stroke:nth-child(2) {
+    top: 32%;
+    left: -15px;
+    width: 160px;
+    height: 18px;
+    background:
+        radial-gradient(ellipse 70% 60% at 40% 40%, rgba(255,255,255,0.35) 0%, transparent 50%),
+        linear-gradient(88deg,
+            transparent 0%,
+            #1565c0 8%,
+            #1980e6 20%,
+            #42a5f5 40%,
+            #1980e6 60%,
+            #1565c0 80%,
+            #0d47a1 95%,
+            transparent 100%);
+    border-radius: 50% 60% 40% 55% / 70% 50% 60% 50%;
+    box-shadow:
+        1px 2px 4px rgba(0,0,0,0.25),
+        inset 0 -2px 3px rgba(0,0,0,0.15),
+        inset 0 3px 5px rgba(255,255,255,0.25);
+    animation: paintStroke2 5s ease-out 0.6s infinite;
+}
+
+/* Stroke 3 - Cadmium Yellow/Orange - expressive */
+.brush-stroke:nth-child(3) {
+    top: 52%;
+    left: -5px;
+    width: 130px;
+    height: 20px;
+    background:
+        radial-gradient(ellipse 75% 55% at 35% 45%, rgba(255,255,255,0.4) 0%, transparent 45%),
+        linear-gradient(92deg,
+            transparent 0%,
+            #e65100 6%,
+            #f4a261 18%,
+            #ffb74d 38%,
+            #ffd54f 55%,
+            #f4a261 72%,
+            #e65100 90%,
+            transparent 100%);
+    border-radius: 55% 45% 60% 40% / 65% 55% 45% 60%;
+    box-shadow:
+        1px 2px 3px rgba(0,0,0,0.25),
+        inset 0 -2px 4px rgba(0,0,0,0.15),
+        inset 0 2px 5px rgba(255,255,255,0.35);
+    animation: paintStroke3 5s ease-out 1.2s infinite;
+}
+
+/* Stroke 4 - Viridian Green - curved stroke */
+.brush-stroke:nth-child(4) {
+    top: 28%;
+    left: 55%;
     width: 100px;
     height: 16px;
-    background: linear-gradient(95deg,
-        transparent 0%,
-        #e63946 10%,
-        #ff6b6b 40%,
-        #ff8585 60%,
-        #e63946 90%,
-        transparent 100%);
-    color: #e63946;
-    animation: vanGoghSwirl1 4s ease-in-out infinite;
+    background:
+        radial-gradient(ellipse 65% 50% at 45% 50%, rgba(255,255,255,0.35) 0%, transparent 50%),
+        linear-gradient(95deg,
+            transparent 0%,
+            #00695c 8%,
+            #2a9d8f 22%,
+            #4db6ac 42%,
+            #2a9d8f 62%,
+            #00695c 85%,
+            transparent 100%);
+    border-radius: 45% 55% 50% 50% / 60% 70% 40% 55%;
+    box-shadow:
+        1px 1px 3px rgba(0,0,0,0.25),
+        inset 0 -1px 3px rgba(0,0,0,0.15),
+        inset 0 2px 4px rgba(255,255,255,0.25);
+    animation: paintStroke4 5s ease-out 1.8s infinite;
 }
 
-.brush-stroke:nth-child(2) {
-    top: 35%;
-    left: 5%;
-    width: 120px;
-    height: 18px;
-    background: linear-gradient(92deg,
-        transparent 0%,
-        #1980e6 8%,
-        #4dabf7 35%,
-        #74c0fc 55%,
-        #1980e6 92%,
-        transparent 100%);
-    color: #1980e6;
-    animation: vanGoghSwirl2 4s ease-in-out 0.5s infinite;
-}
-
-.brush-stroke:nth-child(3) {
-    top: 55%;
-    left: 15%;
-    width: 95px;
-    height: 14px;
-    background: linear-gradient(88deg,
-        transparent 0%,
-        #f4a261 12%,
-        #ffb347 45%,
-        #ffc670 65%,
-        #f4a261 88%,
-        transparent 100%);
-    color: #f4a261;
-    animation: vanGoghSwirl3 4s ease-in-out 1s infinite;
-}
-
-.brush-stroke:nth-child(4) {
-    top: 25%;
-    left: 50%;
-    width: 85px;
-    height: 15px;
-    background: linear-gradient(96deg,
-        transparent 0%,
-        #2a9d8f 10%,
-        #52c7b8 40%,
-        #6fd5c8 60%,
-        #2a9d8f 90%,
-        transparent 100%);
-    color: #2a9d8f;
-    animation: vanGoghSwirl4 4s ease-in-out 1.5s infinite;
-}
-
+/* Stroke 5 - Dioxazine Purple - final accent */
 .brush-stroke:nth-child(5) {
-    top: 70%;
-    left: 25%;
-    width: 110px;
-    height: 17px;
-    background: linear-gradient(94deg,
-        transparent 0%,
-        #9b5de5 8%,
-        #c77dff 35%,
-        #d9a3ff 55%,
-        #9b5de5 92%,
-        transparent 100%);
-    color: #9b5de5;
-    animation: vanGoghSwirl5 4s ease-in-out 2s infinite;
+    top: 72%;
+    left: 15%;
+    width: 145px;
+    height: 19px;
+    background:
+        radial-gradient(ellipse 70% 55% at 38% 45%, rgba(255,255,255,0.38) 0%, transparent 48%),
+        linear-gradient(89deg,
+            transparent 0%,
+            #4a148c 7%,
+            #9b5de5 20%,
+            #b388ff 40%,
+            #9b5de5 60%,
+            #7b1fa2 80%,
+            #4a148c 95%,
+            transparent 100%);
+    border-radius: 50% 50% 55% 45% / 55% 65% 45% 60%;
+    box-shadow:
+        1px 2px 4px rgba(0,0,0,0.28),
+        inset 0 -2px 4px rgba(0,0,0,0.18),
+        inset 0 3px 5px rgba(255,255,255,0.28);
+    animation: paintStroke5 5s ease-out 2.4s infinite;
 }
 
-/* Van Gogh Swirl Animations - Curved, flowing brushstrokes */
-@keyframes vanGoghSwirl1 {
+/* Realistic Paint Stroke Animations - Like brush on canvas */
+@keyframes paintStroke1 {
     0% {
         opacity: 0;
-        transform: rotate(-15deg) scaleX(0) translateX(-20px);
-        filter: blur(3px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(0) rotate(-3deg);
     }
-    15% {
-        opacity: 0.7;
-        transform: rotate(-12deg) scaleX(0.5) translateX(-10px);
-        filter: blur(1px);
+    10% {
+        opacity: 0.9;
+        transform: scaleX(0.3) rotate(-2deg);
     }
-    40% {
+    30% {
         opacity: 1;
-        transform: rotate(-8deg) scaleX(1.1) translateX(5px) skewY(-2deg);
-        filter: blur(0);
-        box-shadow: 0 0 12px currentColor;
-    }
-    60% {
-        opacity: 1;
-        transform: rotate(-5deg) scaleX(1) translateX(10px) skewY(-1deg);
-        box-shadow: 0 0 8px currentColor;
-    }
-    80% {
-        opacity: 0.6;
-        transform: rotate(-3deg) scaleX(0.9) translateX(15px);
-        filter: blur(0.5px);
-    }
-    100% {
-        opacity: 0;
-        transform: rotate(0deg) scaleX(0.7) translateX(25px);
-        filter: blur(2px);
-        box-shadow: 0 0 0 currentColor;
-    }
-}
-
-@keyframes vanGoghSwirl2 {
-    0% {
-        opacity: 0;
-        transform: rotate(20deg) scaleX(0) translateX(-25px);
-        filter: blur(3px);
-        box-shadow: 0 0 0 currentColor;
-    }
-    20% {
-        opacity: 0.8;
-        transform: rotate(15deg) scaleX(0.6) translateX(-12px);
-        filter: blur(0.8px);
-    }
-    45% {
-        opacity: 1;
-        transform: rotate(10deg) scaleX(1.15) translateX(0) skewY(3deg);
-        filter: blur(0);
-        box-shadow: 0 0 15px currentColor;
-    }
-    65% {
-        opacity: 1;
-        transform: rotate(6deg) scaleX(1.05) translateX(8px) skewY(2deg);
-        box-shadow: 0 0 10px currentColor;
-    }
-    85% {
-        opacity: 0.5;
-        transform: rotate(3deg) scaleX(0.85) translateX(18px);
-        filter: blur(1px);
-    }
-    100% {
-        opacity: 0;
-        transform: rotate(0deg) scaleX(0.6) translateX(30px);
-        filter: blur(2.5px);
-        box-shadow: 0 0 0 currentColor;
-    }
-}
-
-@keyframes vanGoghSwirl3 {
-    0% {
-        opacity: 0;
-        transform: rotate(-25deg) scaleX(0) translateX(-15px);
-        filter: blur(2.5px);
-        box-shadow: 0 0 0 currentColor;
-    }
-    25% {
-        opacity: 0.75;
-        transform: rotate(-18deg) scaleX(0.55) translateX(-5px);
-        filter: blur(0.6px);
+        transform: scaleX(0.7) rotate(-1deg);
     }
     50% {
         opacity: 1;
-        transform: rotate(-12deg) scaleX(1.2) translateX(8px) skewY(-3deg);
-        filter: blur(0);
-        box-shadow: 0 0 14px currentColor;
+        transform: scaleX(1) rotate(0deg);
     }
     70% {
-        opacity: 0.9;
-        transform: rotate(-7deg) scaleX(1) translateX(12px) skewY(-1deg);
-        box-shadow: 0 0 8px currentColor;
+        opacity: 1;
+        transform: scaleX(1) rotate(0deg);
     }
-    90% {
-        opacity: 0.4;
-        transform: rotate(-2deg) scaleX(0.8) translateX(20px);
-        filter: blur(1.5px);
+    85% {
+        opacity: 0.8;
+        transform: scaleX(1) rotate(0deg);
     }
     100% {
         opacity: 0;
-        transform: rotate(2deg) scaleX(0.5) translateX(28px);
-        filter: blur(3px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(1) rotate(0deg);
     }
 }
 
-@keyframes vanGoghSwirl4 {
+@keyframes paintStroke2 {
     0% {
         opacity: 0;
-        transform: rotate(12deg) scaleX(0) translateX(-18px);
-        filter: blur(2px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(0) rotate(2deg);
     }
-    30% {
+    12% {
         opacity: 0.85;
-        transform: rotate(8deg) scaleX(0.65) translateX(-8px);
-        filter: blur(0.5px);
+        transform: scaleX(0.35) rotate(1.5deg);
+    }
+    35% {
+        opacity: 1;
+        transform: scaleX(0.75) rotate(0.8deg);
     }
     55% {
         opacity: 1;
-        transform: rotate(4deg) scaleX(1.1) translateX(5px) skewY(2deg);
-        filter: blur(0);
-        box-shadow: 0 0 12px currentColor;
+        transform: scaleX(1) rotate(0deg);
     }
     75% {
-        opacity: 0.8;
-        transform: rotate(0deg) scaleX(0.95) translateX(12px) skewY(1deg);
-        box-shadow: 0 0 6px currentColor;
+        opacity: 1;
+        transform: scaleX(1) rotate(0deg);
+    }
+    90% {
+        opacity: 0.7;
+        transform: scaleX(1) rotate(0deg);
     }
     100% {
         opacity: 0;
-        transform: rotate(-4deg) scaleX(0.65) translateX(22px);
-        filter: blur(2px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(1) rotate(0deg);
     }
 }
 
-@keyframes vanGoghSwirl5 {
+@keyframes paintStroke3 {
     0% {
         opacity: 0;
-        transform: rotate(-10deg) scaleX(0) translateX(-22px);
-        filter: blur(3px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(0) rotate(-4deg);
     }
-    35% {
+    15% {
         opacity: 0.9;
-        transform: rotate(-6deg) scaleX(0.7) translateX(-10px);
-        filter: blur(0.4px);
+        transform: scaleX(0.4) rotate(-2.5deg);
+    }
+    40% {
+        opacity: 1;
+        transform: scaleX(0.8) rotate(-1deg);
     }
     60% {
         opacity: 1;
-        transform: rotate(-2deg) scaleX(1.18) translateX(3px) skewY(-2deg);
-        filter: blur(0);
-        box-shadow: 0 0 16px currentColor;
+        transform: scaleX(1) rotate(0deg);
     }
     80% {
-        opacity: 0.7;
-        transform: rotate(2deg) scaleX(1) translateX(15px) skewY(-1deg);
-        box-shadow: 0 0 8px currentColor;
+        opacity: 1;
+        transform: scaleX(1) rotate(0deg);
+    }
+    95% {
+        opacity: 0.6;
+        transform: scaleX(1) rotate(0deg);
     }
     100% {
         opacity: 0;
-        transform: rotate(5deg) scaleX(0.6) translateX(32px);
-        filter: blur(2.5px);
-        box-shadow: 0 0 0 currentColor;
+        transform: scaleX(1) rotate(0deg);
+    }
+}
+
+@keyframes paintStroke4 {
+    0% {
+        opacity: 0;
+        transform: scaleX(0) rotate(3deg);
+    }
+    18% {
+        opacity: 0.88;
+        transform: scaleX(0.38) rotate(2deg);
+    }
+    45% {
+        opacity: 1;
+        transform: scaleX(0.82) rotate(0.5deg);
+    }
+    65% {
+        opacity: 1;
+        transform: scaleX(1) rotate(0deg);
+    }
+    85% {
+        opacity: 0.9;
+        transform: scaleX(1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleX(1) rotate(0deg);
+    }
+}
+
+@keyframes paintStroke5 {
+    0% {
+        opacity: 0;
+        transform: scaleX(0) rotate(-2deg);
+    }
+    20% {
+        opacity: 0.92;
+        transform: scaleX(0.42) rotate(-1deg);
+    }
+    50% {
+        opacity: 1;
+        transform: scaleX(0.85) rotate(-0.3deg);
+    }
+    70% {
+        opacity: 1;
+        transform: scaleX(1) rotate(0deg);
+    }
+    90% {
+        opacity: 0.75;
+        transform: scaleX(1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: scaleX(1) rotate(0deg);
     }
 }
 
