@@ -9,6 +9,8 @@ import { APP_CONFIG } from '../../shared/config/api.js';
 
 // UI Elements
 let ui = {};
+// Store unsubscribe function to prevent memory leaks
+let userSnapshotUnsubscribe = null;
 
 export function initAuth() {
     // Cache UI elements
@@ -85,7 +87,10 @@ function setupAuthButtons() {
 
     // Logout
     if (buttons.logout) {
-        buttons.logout.addEventListener("click", () => auth.signOut());
+        buttons.logout.addEventListener("click", () => {
+            cleanupAuth(); // Cleanup listeners before signing out
+            auth.signOut();
+        });
     }
 }
 
@@ -155,9 +160,15 @@ export function updateUserInfo(user) {
         ui.userGreeting.textContent = `Hello, ${user.email}`;
     }
 
+    // Cleanup previous listener to prevent memory leaks
+    if (userSnapshotUnsubscribe) {
+        userSnapshotUnsubscribe();
+        userSnapshotUnsubscribe = null;
+    }
+
     const userRef = db.collection("users").doc(user.uid);
 
-    userRef.onSnapshot(async doc => {
+    userSnapshotUnsubscribe = userRef.onSnapshot(async doc => {
         if (doc.exists) {
             const userData = doc.data();
             if (ui.userCredits) {
@@ -199,4 +210,14 @@ export function getCurrentUser() {
 
 export function getUserCredits(userId) {
     return db.collection("users").doc(userId).get();
+}
+
+/**
+ * Cleanup auth listeners to prevent memory leaks
+ */
+export function cleanupAuth() {
+    if (userSnapshotUnsubscribe) {
+        userSnapshotUnsubscribe();
+        userSnapshotUnsubscribe = null;
+    }
 }

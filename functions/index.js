@@ -269,11 +269,30 @@ app.post("/generate", async (req, res) => {
       
       const bucketName = gsUrlMatch[1];
       const filePath = gsUrlMatch[2];
-      
+
+      // Security: Validate path doesn't contain traversal attempts
+      if (filePath.includes('..') || filePath.includes('//')) {
+        throw new Error("Invalid file path");
+      }
+
+      // Security: Validate bucket is the expected one
+      const ALLOWED_BUCKET = "ai-painter-app-uploads-2025";
+      if (bucketName !== ALLOWED_BUCKET) {
+        throw new Error("Invalid storage bucket");
+      }
+
       console.log("Bucket:", bucketName, "File path:", filePath);
-      
+
       const bucket = admin.storage().bucket(bucketName);
       const file = bucket.file(filePath);
+
+      // Security: Check file size before download (max 10MB)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+      const [metadata] = await file.getMetadata();
+      if (metadata.size > MAX_FILE_SIZE) {
+        throw new Error(`File too large: ${metadata.size} bytes (max ${MAX_FILE_SIZE})`);
+      }
+
       [imageBuffer] = await file.download();
       
       console.log("✓ Image downloaded successfully. Size:", imageBuffer.length, "bytes");
@@ -281,9 +300,8 @@ app.post("/generate", async (req, res) => {
       console.error("ERROR downloading from Storage:");
       console.error("Error message:", downloadError.message);
       console.error("Error stack:", downloadError.stack);
-      return res.status(500).json({ 
-        error: "Error al descargar la imagen de Storage.",
-        details: downloadError.message 
+      return res.status(500).json({
+        error: "Error al descargar la imagen de Storage."
       });
     }
 
@@ -317,9 +335,8 @@ app.post("/generate", async (req, res) => {
       console.error("ERROR converting HEIC:");
       console.error("Error message:", heicError.message);
       console.error("Error stack:", heicError.stack);
-      return res.status(500).json({ 
-        error: "Error al convertir imagen HEIC.",
-        details: heicError.message 
+      return res.status(500).json({
+        error: "Error al convertir imagen HEIC."
       });
     }
 
@@ -371,9 +388,8 @@ app.post("/generate", async (req, res) => {
       console.error("Buffer length:", processedBuffer ? processedBuffer.length : 'null');
       console.error("Buffer type:", typeof processedBuffer);
       
-      return res.status(500).json({ 
-        error: "Error al redimensionar la imagen.",
-        details: jimpError.message 
+      return res.status(500).json({
+        error: "Error al redimensionar la imagen."
       });
     }
 
@@ -437,22 +453,25 @@ app.post("/generate", async (req, res) => {
       console.error("ERROR: Gemini no generó imagen transformada");
       console.error(
           "Response structure:",
-          JSON.stringify(response, null, 2),
+          JSON.stringify(result, null, 2),
       );
       // NO descontar crédito si falla la transformación
       const errorMsg = "No se pudo transformar tu imagen a arte. " +
                        "Por favor intenta con otra foto o " +
                        "contacta soporte.";
       return res.status(500).json({
-        error: errorMsg,
-        details: "Gemini no generó una imagen transformada",
+        error: errorMsg
       });
     }
     // Descontar crédito solo si la transformación fue exitosa
+    // Security: Re-validate credits inside transaction to prevent race conditions
     await admin.firestore().runTransaction(async (transaction) => {
       const freshUserDoc = await transaction.get(userRef);
-      const newCredits = freshUserDoc.data().credits - 1;
-      transaction.update(userRef, {credits: newCredits});
+      const currentCredits = freshUserDoc.data()?.credits || 0;
+      if (currentCredits < 1) {
+        throw new Error('Insufficient credits');
+      }
+      transaction.update(userRef, {credits: currentCredits - 1});
     });
 
     res.json({

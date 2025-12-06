@@ -6,9 +6,18 @@
 import { showToast } from '../../shared/utils/toast.js';
 
 let isDragging = false;
+let cleanupFunctions = [];
 
 export function initGallery() {
     setupFullscreenButton();
+}
+
+/**
+ * Cleanup gallery listeners to prevent memory leaks
+ */
+export function cleanupGallery() {
+    cleanupFunctions.forEach(fn => fn());
+    cleanupFunctions = [];
 }
 
 export function setupBeforeAfterComparison(originalUrl, transformedUrl) {
@@ -69,16 +78,31 @@ export function setupBeforeAfterComparison(originalUrl, transformedUrl) {
     if (showOriginalBtn) showOriginalBtn.addEventListener('click', showOriginal);
     if (showSliderBtn) showSliderBtn.addEventListener('click', showSlider);
 
-    // Event listeners for slider
+    // Event listeners for slider (with cleanup tracking)
     if (sliderHandle) {
-        sliderHandle.addEventListener('mousedown', () => isDragging = true);
-        document.addEventListener('mouseup', () => isDragging = false);
+        const onMouseDown = () => isDragging = true;
+        const onMouseUp = () => isDragging = false;
+        const onTouchStart = () => isDragging = true;
+        const onTouchEnd = () => isDragging = false;
+
+        sliderHandle.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mouseup', onMouseUp);
         document.addEventListener('mousemove', handleSliderMove);
 
         // Touch events
-        sliderHandle.addEventListener('touchstart', () => isDragging = true);
-        document.addEventListener('touchend', () => isDragging = false);
+        sliderHandle.addEventListener('touchstart', onTouchStart);
+        document.addEventListener('touchend', onTouchEnd);
         document.addEventListener('touchmove', handleSliderMove);
+
+        // Register cleanup functions
+        cleanupFunctions.push(() => {
+            sliderHandle.removeEventListener('mousedown', onMouseDown);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('mousemove', handleSliderMove);
+            sliderHandle.removeEventListener('touchstart', onTouchStart);
+            document.removeEventListener('touchend', onTouchEnd);
+            document.removeEventListener('touchmove', handleSliderMove);
+        });
     }
 
     // Initialize with transformed view
