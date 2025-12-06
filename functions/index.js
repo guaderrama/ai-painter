@@ -331,8 +331,8 @@ app.post("/generate", async (req, res) => {
       const bucket = admin.storage().bucket(bucketName);
       const file = bucket.file(filePath);
 
-      // Security: Check file size before download (max 10MB)
-      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+      // Security: Check file size before download (max 20MB)
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
       const [metadata] = await file.getMetadata();
       if (metadata.size > MAX_FILE_SIZE) {
         throw new Error(`File too large: ${metadata.size} bytes (max ${MAX_FILE_SIZE})`);
