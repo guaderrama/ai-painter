@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection: users can only read/write their own document
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Users cannot write credits directly - only Cloud Functions can
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && !('credits' in request.resource.data);
+
+      // Artworks subcollection: users can read their own artworks
+      // Writing is done by Cloud Functions only
+      match /artworks/{artworkId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false; // Only Cloud Functions can write artworks
+      }
+    }
+
+    // Customers collection (created by Stripe extension)
+    match /customers/{customerId} {
+      allow read: if request.auth != null && request.auth.uid == customerId;
+      allow write: if false; // Only Stripe extension writes here
+
+      // Checkout sessions subcollection
+      match /checkout_sessions/{sessionId} {
+        allow read: if request.auth != null && request.auth.uid == customerId;
+        allow create: if request.auth != null && request.auth.uid == customerId;
+        allow update, delete: if false;
+      }
+
+      // Payments subcollection
+      match /payments/{paymentId} {
+        allow read: if request.auth != null && request.auth.uid == customerId;
+        allow write: if false; // Only Stripe extension writes here
+      }
+
+      // Subscriptions subcollection
+      match /subscriptions/{subscriptionId} {
+        allow read: if request.auth != null && request.auth.uid == customerId;
+        allow write: if false; // Only Stripe extension writes here
+      }
+    }
+
+    // Products collection (public, read-only)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /prices/{priceId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

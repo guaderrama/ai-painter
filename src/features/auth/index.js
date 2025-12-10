@@ -5,7 +5,8 @@
 
 import { auth, db, googleProvider } from '../../shared/config/firebase.js';
 import { showScreen } from '../../shared/ui/screens.js';
-import { APP_CONFIG } from '../../shared/config/api.js';
+import { APP_CONFIG, API_BASE_URL } from '../../shared/config/api.js';
+import { loadUserHistory } from '../history/index.js';
 
 // UI Elements
 let ui = {};
@@ -177,18 +178,35 @@ export function updateUserInfo(user) {
             // Decide which screen to show based on credits
             if ((userData.credits || 0) > 0) {
                 showScreen("upload");
+                // Load user's artwork history
+                loadUserHistory(user.uid);
             } else {
                 showScreen("limit");
             }
         } else {
+            // User document doesn't exist - call Cloud Function to create it
+            // This bypasses Firestore security rules that block direct credit writes
             try {
-                await userRef.set({
-                    credits: APP_CONFIG.initialCredits,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                }, { merge: true });
+                console.log("User document not found, calling ensure-user endpoint...");
+                const idToken = await user.getIdToken();
+
+                const response = await fetch(`${API_BASE_URL}/ensure-user`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${idToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log("User initialized with credits:", result.credits);
 
                 if (ui.userCredits) {
-                    ui.userCredits.textContent = `${APP_CONFIG.initialCredits} credits remaining`;
+                    ui.userCredits.textContent = `${result.credits} credits remaining`;
                 }
                 showScreen("upload");
             } catch (createErr) {

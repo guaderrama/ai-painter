@@ -24,10 +24,17 @@ export function showToast(message, type = 'success') {
 
     const toast = document.createElement('div');
     toast.className = `toast-notification fixed bottom-4 right-4 px-6 py-4 rounded-xl shadow-lg z-50 flex items-center gap-3 transition-all duration-300 transform translate-y-0 ${TOAST_COLORS[type]}`;
-    toast.innerHTML = `
-        ${TOAST_ICONS[type]}
-        <span class="font-semibold">${message}</span>
-    `;
+    // Create icon element (trusted SVG content)
+    const iconWrapper = document.createElement('span');
+    iconWrapper.innerHTML = TOAST_ICONS[type];
+
+    // Create message element (safely escaped text)
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'font-semibold';
+    messageSpan.textContent = message; // Safe: textContent escapes HTML
+
+    toast.appendChild(iconWrapper);
+    toast.appendChild(messageSpan);
 
     document.body.appendChild(toast);
 

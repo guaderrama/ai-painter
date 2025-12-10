@@ -18,6 +18,7 @@ import { initUpload } from './features/upload/index.js';
 import { initGallery, setupBeforeAfterComparison, setupDownloadButton } from './features/gallery/index.js';
 import { initSharing, setupSocialSharing } from './features/sharing/index.js';
 import { initPayments } from './features/payments/index.js';
+import { initHistory, refreshHistory } from './features/history/index.js';
 
 /**
  * Application Initialization
@@ -36,6 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initGallery();
     initSharing();
     initPayments();
+    initHistory();
 
     // Initialize upload with callback for when processing completes
     initUpload(handleProcessingComplete);
@@ -67,6 +69,9 @@ function handleProcessingComplete(originalUrl, artworkUrl) {
 
     // Setup social sharing
     setupSocialSharing(originalUrl, artworkUrl);
+
+    // Refresh history to show new artwork
+    refreshHistory();
 }
 
 // Export for potential external use

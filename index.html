@@ -43,7 +43,25 @@
         
         .welcome-dot.active {
             width: 2rem;
-            background-color: #1980e6 !important;
+            background-color: #e63946 !important;
+        }
+
+        /* Artistic gradient for primary buttons */
+        .btn-artistic {
+            background: linear-gradient(135deg, #e63946 0%, #9b5de5 50%, #1980e6 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        .btn-artistic:hover {
+            background: linear-gradient(135deg, #d42836 0%, #8a4dd4 50%, #1670c9 100%);
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         /* Comparison Buttons */
@@ -89,8 +107,17 @@
             <div class="welcome-slide active" data-slide="1">
                 <div class="mb-8">
                     <svg class="mx-auto mb-6" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="60" cy="60" r="60" fill="#1980e6" opacity="0.1"/>
-                        <path d="M60 30 L75 45 L90 35 L80 60 L90 75 L70 85 L60 70 L50 85 L30 75 L40 60 L30 35 L45 45 Z" fill="#1980e6"/>
+                        <!-- Artist Palette with Paint Dabs -->
+                        <ellipse cx="60" cy="65" rx="50" ry="40" fill="#2a2a2a" stroke="#444" stroke-width="2"/>
+                        <ellipse cx="45" cy="50" rx="6" ry="5" fill="#e63946"/>
+                        <ellipse cx="60" cy="45" rx="5" ry="6" fill="#f4a261"/>
+                        <ellipse cx="75" cy="50" rx="6" ry="5" fill="#2a9d8f"/>
+                        <ellipse cx="80" cy="65" rx="5" ry="5" fill="#9b5de5"/>
+                        <ellipse cx="70" cy="78" rx="6" ry="5" fill="#1980e6"/>
+                        <circle cx="35" cy="70" r="10" fill="#111418"/>
+                        <!-- Brush -->
+                        <rect x="85" y="20" width="8" height="35" rx="2" fill="#8B4513" transform="rotate(30 89 37)"/>
+                        <path d="M95 15 Q100 25 95 35 Q90 25 95 15" fill="#e63946"/>
                     </svg>
                 </div>
                 <h1 class="text-white text-4xl font-bold mb-4">A New Way to Experience My Art</h1>
@@ -103,9 +130,18 @@
             <div class="welcome-slide" data-slide="2">
                 <div class="mb-8">
                     <svg class="mx-auto mb-6" width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="60" cy="60" r="60" fill="#1980e6" opacity="0.1"/>
-                        <circle cx="60" cy="60" r="30" stroke="#1980e6" stroke-width="3" fill="none"/>
-                        <circle cx="60" cy="60" r="5" fill="#1980e6"/>
+                        <!-- Camera/Eye with artistic flair -->
+                        <circle cx="60" cy="60" r="45" fill="#2a2a2a" stroke="#444" stroke-width="2"/>
+                        <circle cx="60" cy="60" r="30" fill="#111418"/>
+                        <circle cx="60" cy="60" r="20" fill="url(#eyeGradient)"/>
+                        <circle cx="60" cy="60" r="8" fill="#111418"/>
+                        <circle cx="55" cy="55" r="4" fill="white" opacity="0.6"/>
+                        <defs>
+                            <radialGradient id="eyeGradient" cx="50%" cy="50%">
+                                <stop offset="0%" stop-color="#f4a261"/>
+                                <stop offset="100%" stop-color="#e63946"/>
+                            </radialGradient>
+                        </defs>
                     </svg>
                 </div>
                 <h1 class="text-white text-4xl font-bold mb-4">See Your World Through My Eyes</h1>
@@ -158,7 +194,7 @@
                 <button id="prev-slide" class="px-6 py-3 bg-[#293038] text-white rounded-xl font-bold hover:bg-gray-700 transition duration-300 opacity-50 cursor-not-allowed">
                     Previous
                 </button>
-                <button id="next-slide" class="px-8 py-3 bg-[#1980e6] text-white rounded-xl font-bold hover:bg-blue-700 transition duration-300">
+                <button id="next-slide" class="px-8 py-3 btn-artistic text-white rounded-xl font-bold transition duration-300">
                     Next
                 </button>
             </div>
@@ -168,7 +204,10 @@
     <!-- Screen 1: Main Login -->
     <div id="login-screen" class="screen active relative size-full min-h-screen flex-col bg-[#111418] dark justify-between group/design-root overflow-x-hidden">
       <div>
-        <h1 class="text-white tracking-light text-[32px] font-bold leading-tight px-4 text-center pb-3 pt-6">Iván Guaderrama</h1>
+        <!-- Logo -->
+        <div class="flex justify-center pt-6 pb-2">
+          <img src="images/Logo Ivan Guaderrama-1400px.png" alt="Iván Guaderrama" class="h-24 w-auto invert" />
+        </div>
         <h2 class="text-[#9dabb8] text-xl font-medium leading-tight px-4 text-center pb-2">Interactive Art Gallery</h2>
         <p class="text-white text-base font-normal leading-normal pb-3 pt-1 px-4 text-center">Transform your photos into unique artworks through AI</p>
         <div class="flex overflow-y-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
@@ -176,14 +215,14 @@
             <div class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-60">
               <div
                 class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl flex flex-col"
-                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD7yPkzkhK7qRx7Gm21et05D4XIWoWh6XTXtMFalhrd1B46frwua3hfWc07s1vOXDnFYesH7lh13CR00V3VZwmI0s1CZbuNmSOGR-IC2s0OQMY828ZhrCOmnFL0z2AkoxzQpj1mjsRuR46udNSeVDwTQtU31gYZs2HHwQpYVZgXiNbxem_VgarJqAMiK-iq1gnf_ThDQrMSTsTXB_hZTIUPyKgcHGYuKv__c3jWDUQjh5yvUAxBEAfwTNfw_U44zP7408B3wsJL8dqR");'
+                style='background-image: url("images/despues.png");'
               ></div>
               <p class="text-white text-base font-medium leading-normal">AI Painting</p>
             </div>
             <div class="flex h-full flex-1 flex-col gap-4 rounded-lg min-w-60">
               <div
                 class="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-xl flex flex-col"
-                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBGk0muuixq4KBz0XZ1JscN52m_VwJwnCBGSIT3sxxo9lEXYYBnTQ2weJI5GuV2X43C-NxTsIAUqsCbUxI6GlilshVPunKDFK13VYciOra_o-Is9dBYPebaOFcUvGtN31-adnMZB-2tLlJgCBNdZLdlp7YLW2SoJrvITgExH5DK5dzrSxBV2zcxFt6HvoUvTfDM0gK9QuVVUmkcfpQiIqkDRardn_mJBr3al8eV1iDIGM_ZaD0tcqtG2wyIDa56odhEb419Z28VjL5k");'
+                style='background-image: url("images/antes.JPG");'
               ></div>
               <p class="text-white text-base font-medium leading-normal">Original Photo</p>
             </div>
@@ -193,7 +232,7 @@
           <div class="flex flex-1 gap-3 max-w-[480px] flex-col items-stretch px-4 py-3">
             <button
               id="login-google"
-              class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-[#1980e6] text-white text-base font-bold leading-normal tracking-[0.015em] w-full"
+              class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 btn-artistic text-white text-base font-bold leading-normal tracking-[0.015em] w-full"
             >
               <span class="truncate">Continue with Google</span>
             </button>
@@ -230,7 +269,7 @@
                     </svg>
                 </button>
             </div>
-            <button id="email-login-button" class="flex items-center justify-center h-12 px-5 bg-[#1980e6] text-white text-base font-bold rounded-xl w-full">
+            <button id="email-login-button" class="flex items-center justify-center h-12 px-5 btn-artistic text-white text-base font-bold rounded-xl w-full">
                 <span>Sign In</span>
             </button>
             <p id="login-error-message" class="text-red-500 text-sm text-center h-4"></p>
@@ -285,7 +324,7 @@
                 <p id="signup-confirm-password-error" class="text-red-500 text-xs mt-1 h-4"></p>
             </div>
             
-            <button id="email-signup-button" class="flex items-center justify-center h-12 px-5 bg-[#1980e6] text-white text-base font-bold rounded-xl w-full">
+            <button id="email-signup-button" class="flex items-center justify-center h-12 px-5 btn-artistic text-white text-base font-bold rounded-xl w-full">
                 <span>Sign Up</span>
             </button>
             <p id="signup-error-message" class="text-red-500 text-sm text-center h-4"></p>
@@ -327,7 +366,7 @@
             <input type="file" id="file-upload" class="hidden" accept="image/jpeg,image/jpg,image/png,image/heic,image/heif" />
 
             <!-- This is the visible button the user clicks -->
-            <button id="upload-button" class="bg-[#1980e6] text-white font-bold py-4 px-8 rounded-xl text-lg hover:bg-blue-700 transition duration-300 mb-3">
+            <button id="upload-button" class="btn-artistic text-white font-bold py-4 px-8 rounded-xl text-lg transition duration-300 mb-3">
                 Transform Your Photo
             </button>
             
@@ -337,7 +376,18 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 256 256">
                     <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z"></path>
                 </svg>
-                <span>JPG, PNG, HEIC • Max 10MB</span>
+                <span>JPG, PNG, HEIC • Max 20MB</span>
+            </div>
+
+            <!-- History Section -->
+            <div id="history-section" class="mt-8 hidden w-full">
+                <div class="border-t border-[#293038] pt-6">
+                    <h3 class="text-white text-lg font-semibold mb-2">Your Recent Creations</h3>
+                    <p class="text-gray-500 text-xs mb-4">Auto-deletes after 15 days</p>
+                    <div id="history-grid" class="grid grid-cols-5 gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -363,7 +413,7 @@
             
             <!-- Progress Bar -->
             <div class="w-full bg-[#293038] rounded-full h-2 mb-2 overflow-hidden">
-                <div id="progress-bar" class="bg-[#1980e6] h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div id="progress-bar" class="h-2 rounded-full transition-all duration-300" style="width: 0%; background: linear-gradient(90deg, #e63946, #f4a261, #9b5de5, #1980e6);"></div>
             </div>
             
             <!-- Progress Percentage & Time -->
@@ -390,9 +440,9 @@
                 </svg>
             </button>
         </div>
-        <div class="flex flex-col items-center justify-center flex-1 px-4 pb-8">
+        <div class="flex flex-col items-center justify-start flex-1 px-4 pb-4 pt-2 overflow-y-auto">
             <!-- Before/After Container -->
-            <div class="w-full max-w-md mb-6 relative" id="comparison-container">
+            <div class="w-full max-w-lg mb-4 relative" id="comparison-container">
                 <!-- Comparison Toggle Buttons -->
                 <div class="flex gap-2 mb-3 justify-center">
                     <button id="show-transformed" class="comparison-btn active px-4 py-2 rounded-lg font-semibold transition duration-300">
@@ -406,14 +456,14 @@
                     </button>
                 </div>
                 
-                <!-- Image Container with Slider -->
-                <div class="relative w-full rounded-xl overflow-hidden" style="background-color: #293038; min-height: 300px; max-height: 70vh;">
+                <!-- Image Container with Slider - Adaptive for portrait/landscape -->
+                <div class="relative w-full rounded-xl overflow-hidden image-display-container" style="background-color: #1a1d21;">
                     <!-- Original Image (background) -->
-                    <img id="original-image" src="" alt="Original" class="absolute top-0 left-0 w-full h-full object-contain">
-                    
+                    <img id="original-image" src="" alt="Original" class="w-full h-auto block">
+
                     <!-- Transformed Image (overlay with clip) -->
                     <div id="transformed-container" class="absolute top-0 left-0 w-full h-full" style="clip-path: inset(0 0 0 0);">
-                        <img id="transformed-image" src="" alt="Transformed" class="w-full h-full object-contain">
+                        <img id="transformed-image" src="" alt="Transformed" class="w-full h-full object-cover">
                     </div>
                     
                     <!-- Slider Handle -->
@@ -431,9 +481,9 @@
             <div class="flex flex-col gap-3 w-full max-w-md">
                 <!-- Primary Actions -->
                 <div class="flex gap-3">
-                    <button 
+                    <button
                         id="download-artwork"
-                        class="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 bg-[#1980e6] text-white text-base font-bold leading-normal flex"
+                        class="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-xl h-12 px-5 btn-artistic text-white text-base font-bold leading-normal flex"
                     >
                         <span class="truncate">Download</span>
                     </button>
@@ -454,34 +504,7 @@
                 <!-- Share Options (Hidden by default) -->
                 <div id="share-options" class="hidden flex-col gap-2 bg-[#293038] rounded-xl p-4">
                     <p class="text-white text-sm font-semibold mb-2">Share your artwork</p>
-                    
-                    <!-- Before/After Collage -->
-                    <button id="generate-collage" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
-                        <div class="w-10 h-10 rounded-full bg-[#1980e6] flex items-center justify-center">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
-                            </svg>
-                        </div>
-                        <div class="flex-1 text-left">
-                            <p class="text-white font-semibold">Before/After Collage</p>
-                            <p class="text-[#9dabb8] text-xs">Perfect for Instagram Post (1080x1080)</p>
-                        </div>
-                    </button>
-                    
-                    <!-- Instagram Story -->
-                    <button id="generate-story" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="7" y="2" width="10" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/>
-                                <circle cx="12" cy="6" r="1.5" fill="white"/>
-                            </svg>
-                        </div>
-                        <div class="flex-1 text-left">
-                            <p class="text-white font-semibold">Instagram Story</p>
-                            <p class="text-[#9dabb8] text-xs">Optimized format (1080x1920)</p>
-                        </div>
-                    </button>
-                    
+
                     <!-- Instagram -->
                     <button id="share-instagram" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
@@ -490,24 +513,38 @@
                             </svg>
                         </div>
                         <div class="flex-1 text-left">
-                            <p class="text-white font-semibold">Instagram Stories</p>
-                            <p class="text-[#9dabb8] text-xs">Share as story (9:16)</p>
+                            <p class="text-white font-semibold">Instagram</p>
+                            <p class="text-[#9dabb8] text-xs">Share to feed or stories</p>
                         </div>
                     </button>
-                    
-                    <!-- WhatsApp -->
-                    <button id="share-whatsapp" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
-                        <div class="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center">
+
+                    <!-- Instagram Story -->
+                    <button id="share-instagram-story" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                <rect x="7" y="2" width="10" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/>
+                                <circle cx="12" cy="6" r="1.5" fill="white"/>
                             </svg>
                         </div>
                         <div class="flex-1 text-left">
-                            <p class="text-white font-semibold">WhatsApp</p>
-                            <p class="text-[#9dabb8] text-xs">Share with contacts</p>
+                            <p class="text-white font-semibold">Instagram Story</p>
+                            <p class="text-[#9dabb8] text-xs">Optimized format (9:16)</p>
                         </div>
                     </button>
-                    
+
+                    <!-- TikTok -->
+                    <button id="share-tiktok" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
+                        <div class="w-10 h-10 rounded-full bg-black flex items-center justify-center">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1 text-left">
+                            <p class="text-white font-semibold">TikTok</p>
+                            <p class="text-[#9dabb8] text-xs">Share to TikTok</p>
+                        </div>
+                    </button>
+
                     <!-- Facebook -->
                     <button id="share-facebook" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
                         <div class="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center">
@@ -520,18 +557,17 @@
                             <p class="text-[#9dabb8] text-xs">Share on timeline</p>
                         </div>
                     </button>
-                    
-                    <!-- Copy Link -->
-                    <button id="copy-link" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
-                        <div class="w-10 h-10 rounded-full bg-[#9dabb8] flex items-center justify-center">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- WhatsApp -->
+                    <button id="share-whatsapp" class="share-option-btn flex items-center gap-3 p-3 rounded-lg hover:bg-[#3a4149] transition duration-300">
+                        <div class="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                             </svg>
                         </div>
                         <div class="flex-1 text-left">
-                            <p class="text-white font-semibold">Copy Link</p>
-                            <p class="text-[#9dabb8] text-xs" id="copy-status">Click to copy</p>
+                            <p class="text-white font-semibold">WhatsApp</p>
+                            <p class="text-[#9dabb8] text-xs">Share with contacts</p>
                         </div>
                     </button>
                 </div>
@@ -542,7 +578,7 @@
         <div class="text-center max-w-md">
             <h2 class="text-white text-2xl font-bold mb-4">Out of Credits</h2>
             <p class="text-[#9dabb8] text-base mb-6">You've used all your credits. Get more to continue creating amazing artworks!</p>
-            <button id="buy-more-credits-limit" class="bg-[#1980e6] text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition duration-300 mb-4">
+            <button id="buy-more-credits-limit" class="btn-artistic text-white font-bold py-3 px-8 rounded-xl transition duration-300 mb-4">
                 Buy Credits
             </button>
             <button id="logout-from-limit" onclick="firebase.auth().signOut()" class="block w-full bg-[#293038] text-white font-bold py-3 px-6 rounded-xl hover:bg-gray-700 transition duration-300">
@@ -581,7 +617,7 @@
                         <p class="text-white text-2xl font-semibold">10 Credits</p>
                         <p class="text-[#9dabb8] text-sm">$0.50 per artwork</p>
                     </div>
-                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="starter">
+                    <button class="buy-credits-btn mt-auto btn-artistic text-white font-bold py-3 px-6 rounded-xl transition duration-300" data-plan="starter">
                         Buy Now
                     </button>
                 </div>
@@ -618,7 +654,7 @@
                         <p class="text-[#9dabb8] text-sm">$0.40 per artwork</p>
                         <p class="text-green-500 text-xs font-semibold mt-1">Save 20%</p>
                     </div>
-                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="pro">
+                    <button class="buy-credits-btn mt-auto btn-artistic text-white font-bold py-3 px-6 rounded-xl transition duration-300" data-plan="pro">
                         Buy Now
                     </button>
                 </div>
@@ -635,7 +671,7 @@
                         <p class="text-[#9dabb8] text-sm">$0.35 per artwork</p>
                         <p class="text-green-500 text-xs font-semibold mt-1">Save 30%</p>
                     </div>
-                    <button class="buy-credits-btn mt-auto bg-[#1980e6] text-white font-bold py-3 px-6 rounded-xl hover:bg-blue-700 transition duration-300" data-plan="artist">
+                    <button class="buy-credits-btn mt-auto btn-artistic text-white font-bold py-3 px-6 rounded-xl transition duration-300" data-plan="artist">
                         Buy Now
                     </button>
                 </div>
@@ -650,8 +686,8 @@
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                         </svg>
                         <div>
-                            <p class="text-white font-semibold">Gemini 2.5 Flash</p>
-                            <p class="text-[#9dabb8]">Latest AI model</p>
+                            <p class="text-white font-semibold">Gemini 3 Pro</p>
+                            <p class="text-[#9dabb8]">Latest AI image model</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
@@ -660,7 +696,7 @@
                         </svg>
                         <div>
                             <p class="text-white font-semibold">High Resolution</p>
-                            <p class="text-[#9dabb8]">Up to 1024px</p>
+                            <p class="text-[#9dabb8]">Up to 1536px</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
@@ -680,6 +716,33 @@
                 <p class="mb-2">Secure payment powered by Stripe</p>
                 <p>Credits never expire • Cancel anytime</p>
             </div>
+        </div>
+    </div>
+
+    <!-- iOS Save Modal - Native save experience for iPhone/iPad -->
+    <div id="ios-save-modal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col">
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 pt-safe">
+            <span class="text-white text-sm opacity-80">Hold image to save to Photos</span>
+            <button id="close-ios-modal" class="text-white text-3xl leading-none hover:opacity-70 transition p-2">&times;</button>
+        </div>
+
+        <!-- Image Container - Long press to save -->
+        <div class="flex-1 flex items-center justify-center p-4 overflow-hidden">
+            <img id="ios-save-image" src="" alt="Artwork" class="max-w-full max-h-full rounded-xl object-contain" style="-webkit-touch-callout: default;">
+        </div>
+
+        <!-- Share Button -->
+        <div class="p-4 pb-safe">
+            <button id="ios-share-btn" class="w-full btn-artistic h-14 rounded-xl text-white font-bold text-lg flex items-center justify-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M18 22C19.6569 22 21 20.6569 21 19C21 17.3431 19.6569 16 18 16C16.3431 16 15 17.3431 15 19C15 20.6569 16.3431 22 18 22Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8.59 13.51L15.42 17.49M15.41 6.51L8.59 10.49" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Share
+            </button>
         </div>
     </div>
 

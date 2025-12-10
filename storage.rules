@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // User uploads: users can only write to their own folder
+    match /uploads/{userId}/{allPaths=**} {
+      // Anyone authenticated can read (needed for image processing)
+      allow read: if request.auth != null;
+
+      // Users can only write to their own folder
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   // Max file size: 10MB
+                   && request.resource.size < 10 * 1024 * 1024
+                   // Only allow image types
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Generated artwork: read-only after creation
+    match /generated/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      // Only Cloud Functions can write generated images
+      allow write: if false;
+    }
+
+    // Artworks history: public read (files made public by Cloud Functions)
+    match /artworks/{userId}/{allPaths=**} {
+      allow read: if true; // Public access for sharing
+      // Only Cloud Functions can write artworks
+      allow write: if false;
+    }
+
+    // Default: deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

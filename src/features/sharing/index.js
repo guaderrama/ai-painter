@@ -1,6 +1,6 @@
 /**
  * Sharing Feature Module
- * Handles social sharing, collages, and Instagram stories
+ * Handles social sharing (Instagram, TikTok, Facebook, WhatsApp)
  */
 
 import { showToast } from '../../shared/utils/toast.js';
@@ -8,6 +8,29 @@ import { APP_CONFIG } from '../../shared/config/api.js';
 
 let currentArtworkUrl = null;
 let currentOriginalUrl = null;
+
+/**
+ * Converts a Data URL to Blob using atob() - more reliable on iOS Safari
+ * @param {string} dataUrl - Data URL to convert
+ * @returns {Promise<Blob>} - The blob
+ */
+async function dataUrlToBlob(dataUrl) {
+    if (dataUrl.startsWith('data:')) {
+        const parts = dataUrl.split(',');
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    } else {
+        // For regular URLs, use fetch
+        const response = await fetch(dataUrl);
+        return await response.blob();
+    }
+}
 
 export function initSharing() {
     // Initial setup - actual sharing is configured when artwork is ready
@@ -18,12 +41,11 @@ export function setupSocialSharing(originalUrl, artworkUrl) {
     currentOriginalUrl = originalUrl;
 
     setupShareMenu();
-    setupCollageGeneration();
-    setupStoryGeneration();
     setupInstagramSharing();
-    setupWhatsAppSharing();
+    setupInstagramStorySharing();
+    setupTikTokSharing();
     setupFacebookSharing();
-    setupCopyLink();
+    setupWhatsAppSharing();
 }
 
 function setupShareMenu() {
@@ -38,55 +60,65 @@ function setupShareMenu() {
     }
 }
 
-function setupCollageGeneration() {
-    const generateCollageBtn = document.getElementById('generate-collage');
+function setupInstagramStorySharing() {
+    const shareStoryBtn = document.getElementById('share-instagram-story');
 
-    if (generateCollageBtn && currentOriginalUrl) {
-        generateCollageBtn.addEventListener('click', async () => {
+    if (shareStoryBtn) {
+        shareStoryBtn.addEventListener('click', async () => {
             try {
-                generateCollageBtn.disabled = true;
-                generateCollageBtn.innerHTML = '<span>Generating...</span>';
+                // Use Web Share API (works on iOS and Android)
+                if (navigator.share) {
+                    const blob = await dataUrlToBlob(currentArtworkUrl);
+                    const file = new File([blob], 'artwork.png', { type: 'image/png' });
 
-                const collageDataUrl = await generateBeforeAfterCollage(currentOriginalUrl, currentArtworkUrl);
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My AI Artwork'
+                        });
+                        return;
+                    }
+                }
 
-                const a = document.createElement('a');
-                a.href = collageDataUrl;
-                a.download = `before-after-collage-${Date.now()}.png`;
-                a.click();
-
-                showToast('Collage generated and downloaded!', 'success');
-                resetCollageButton(generateCollageBtn);
+                // Fallback: download for desktop
+                downloadArtwork('artwork-story.png');
+                showToast('Image downloaded! Open Instagram to share.', 'info');
             } catch (error) {
-                console.error('Error generating collage:', error);
-                showToast('Failed to generate collage', 'error');
-                generateCollageBtn.disabled = false;
+                if (error.name === 'AbortError') return; // User cancelled
+                console.error('Error sharing to Instagram Story:', error);
+                showToast('Could not share to Instagram', 'error');
             }
         });
     }
 }
 
-function setupStoryGeneration() {
-    const generateStoryBtn = document.getElementById('generate-story');
+function setupTikTokSharing() {
+    const shareTikTok = document.getElementById('share-tiktok');
 
-    if (generateStoryBtn) {
-        generateStoryBtn.addEventListener('click', async () => {
+    if (shareTikTok) {
+        shareTikTok.addEventListener('click', async () => {
             try {
-                generateStoryBtn.disabled = true;
-                generateStoryBtn.innerHTML = '<span>Generating...</span>';
+                // Use Web Share API (works on iOS and Android)
+                if (navigator.share) {
+                    const blob = await dataUrlToBlob(currentArtworkUrl);
+                    const file = new File([blob], 'artwork.png', { type: 'image/png' });
 
-                const storyDataUrl = await generateInstagramStory(currentArtworkUrl);
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My AI Artwork'
+                        });
+                        return;
+                    }
+                }
 
-                const a = document.createElement('a');
-                a.href = storyDataUrl;
-                a.download = `instagram-story-${Date.now()}.png`;
-                a.click();
-
-                showToast('Instagram Story generated!', 'success');
-                resetStoryButton(generateStoryBtn);
+                // Fallback: download for desktop
+                downloadArtwork('artwork-tiktok.png');
+                showToast('Image downloaded! Open TikTok to share.', 'info');
             } catch (error) {
-                console.error('Error generating story:', error);
-                showToast('Failed to generate story', 'error');
-                generateStoryBtn.disabled = false;
+                if (error.name === 'AbortError') return; // User cancelled
+                console.error('Error sharing to TikTok:', error);
+                showToast('Could not share to TikTok', 'error');
             }
         });
     }
@@ -97,24 +129,34 @@ function setupInstagramSharing() {
 
     if (shareInstagram) {
         shareInstagram.addEventListener('click', async () => {
-            try {
-                const response = await fetch(currentArtworkUrl);
-                const blob = await response.blob();
-                const file = new File([blob], 'artwork.png', { type: 'image/png' });
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-                if (navigator.share && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        files: [file],
-                        title: 'My AI Artwork',
-                        text: 'Check out my artwork created with Iván Guaderrama\'s AI Gallery!'
-                    });
+            try {
+                // Use Web Share API (works on iOS and Android)
+                if (navigator.share) {
+                    const blob = await dataUrlToBlob(currentArtworkUrl);
+                    const file = new File([blob], 'artwork.png', { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My AI Artwork'
+                        });
+                        return;
+                    }
+                }
+
+                // Fallback: download for desktop
+                if (!isIOS) {
+                    downloadArtwork('artwork-instagram.png');
+                    showToast('Image downloaded! Open Instagram to share.', 'info');
                 } else {
-                    downloadArtwork('artwork-instagram-story.png');
-                    alert('Image downloaded! Open Instagram and upload it as a story.');
+                    showToast('Could not share to Instagram', 'error');
                 }
             } catch (error) {
+                if (error.name === 'AbortError') return; // User cancelled
                 console.error('Error sharing to Instagram:', error);
-                downloadArtwork('artwork-instagram.png');
+                showToast('Could not share to Instagram', 'error');
             }
         });
     }
@@ -125,28 +167,39 @@ function setupWhatsAppSharing() {
 
     if (shareWhatsApp) {
         shareWhatsApp.addEventListener('click', async () => {
-            const text = encodeURIComponent('Check out my artwork created with Iván Guaderrama\'s AI Gallery!');
-            const url = `https://wa.me/?text=${text}`;
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-            if (navigator.share) {
-                try {
-                    const response = await fetch(currentArtworkUrl);
-                    const blob = await response.blob();
+            try {
+                // iOS/Android with Web Share API - share file directly
+                if (navigator.share) {
+                    const blob = await dataUrlToBlob(currentArtworkUrl);
                     const file = new File([blob], 'artwork.png', { type: 'image/png' });
 
-                    await navigator.share({
-                        files: [file],
-                        title: 'My AI Artwork',
-                        text: 'Check out my artwork!'
-                    });
-                    return;
-                } catch (error) {
-                    console.log('Web Share failed, falling back to WhatsApp link');
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My AI Artwork'
+                        });
+                        return;
+                    }
                 }
-            }
 
-            window.open(url, '_blank');
-            setTimeout(() => downloadArtwork('artwork-whatsapp.png'), 500);
+                // Fallback: WhatsApp URL scheme (text only)
+                const text = encodeURIComponent('Check out my artwork created with AI!');
+                const waUrl = `https://wa.me/?text=${text}`;
+                window.open(waUrl, '_blank');
+
+                // On desktop, also download the image
+                if (!isIOS) {
+                    setTimeout(() => downloadArtwork('artwork-whatsapp.png'), 500);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') return; // User cancelled
+                console.log('Web Share failed, falling back to WhatsApp link');
+
+                const text = encodeURIComponent('Check out my artwork!');
+                window.open(`https://wa.me/?text=${text}`, '_blank');
+            }
         });
     }
 }
@@ -156,37 +209,40 @@ function setupFacebookSharing() {
 
     if (shareFacebook) {
         shareFacebook.addEventListener('click', async () => {
-            downloadArtwork('artwork-facebook.png');
-
-            setTimeout(() => {
-                const text = encodeURIComponent('Check out my artwork created with AI!');
-                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_CONFIG.appUrl)}&quote=${text}`;
-                window.open(fbUrl, '_blank', 'width=600,height=400');
-            }, 500);
-        });
-    }
-}
-
-function setupCopyLink() {
-    const copyLink = document.getElementById('copy-link');
-
-    if (copyLink) {
-        copyLink.addEventListener('click', async () => {
-            const copyStatus = document.getElementById('copy-status');
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
             try {
-                await navigator.clipboard.writeText(APP_CONFIG.appUrl);
-                if (copyStatus) {
-                    copyStatus.textContent = 'Link copied!';
-                    copyStatus.classList.add('text-green-500');
-                    setTimeout(() => {
-                        copyStatus.textContent = 'Click to copy';
-                        copyStatus.classList.remove('text-green-500');
-                    }, 2000);
+                // iOS: Try Web Share API first (opens native Share Sheet)
+                if (isIOS && navigator.share) {
+                    const blob = await dataUrlToBlob(currentArtworkUrl);
+                    const file = new File([blob], 'artwork.png', { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'My AI Artwork'
+                        });
+                        return;
+                    }
+                }
+
+                // Fallback: Facebook Share Dialog (shares URL, not image directly)
+                // Facebook doesn't allow sharing images directly from web
+                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_CONFIG.appUrl)}`;
+                window.open(fbUrl, '_blank', 'width=600,height=400');
+
+                // On desktop, also download the image so user can upload it manually
+                if (!isIOS) {
+                    downloadArtwork('artwork-facebook.png');
+                    showToast('Image downloaded. Upload it to Facebook!', 'info');
                 }
             } catch (error) {
-                console.error('Failed to copy:', error);
-                if (copyStatus) copyStatus.textContent = 'Failed to copy';
+                if (error.name === 'AbortError') return; // User cancelled
+                console.error('Error sharing to Facebook:', error);
+
+                // Fallback to Facebook dialog
+                const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_CONFIG.appUrl)}`;
+                window.open(fbUrl, '_blank', 'width=600,height=400');
             }
         });
     }
@@ -197,138 +253,4 @@ function downloadArtwork(filename) {
     a.href = currentArtworkUrl;
     a.download = filename;
     a.click();
-}
-
-async function generateBeforeAfterCollage(originalUrl, artworkUrl) {
-    return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1080;
-        canvas.height = 1080;
-        const ctx = canvas.getContext('2d');
-
-        const originalImg = new Image();
-        const artworkImg = new Image();
-
-        let loadedCount = 0;
-        const onImageLoad = () => {
-            loadedCount++;
-            if (loadedCount === 2) {
-                // Background
-                ctx.fillStyle = '#111418';
-                ctx.fillRect(0, 0, 1080, 1080);
-
-                // Draw original (left side)
-                ctx.drawImage(originalImg, 40, 140, 480, 720);
-
-                // Draw arrow
-                ctx.fillStyle = '#1980e6';
-                ctx.font = 'bold 60px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('→', 540, 520);
-
-                // Draw artwork (right side)
-                ctx.drawImage(artworkImg, 560, 140, 480, 720);
-
-                // Add branding
-                ctx.fillStyle = '#9dabb8';
-                ctx.font = '18px "Spline Sans", sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Through the Vision of', 540, 920);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 28px "Spline Sans", sans-serif';
-                ctx.fillText('Iván Guaderrama', 540, 955);
-
-                resolve(canvas.toDataURL('image/png'));
-            }
-        };
-
-        originalImg.onload = onImageLoad;
-        artworkImg.onload = onImageLoad;
-        originalImg.src = originalUrl;
-        artworkImg.src = artworkUrl;
-    });
-}
-
-async function generateInstagramStory(artworkUrl) {
-    return new Promise((resolve) => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1080;
-        canvas.height = 1920;
-        const ctx = canvas.getContext('2d');
-
-        const artworkImg = new Image();
-        artworkImg.onload = () => {
-            // Background with blurred artwork
-            ctx.filter = 'blur(30px) brightness(0.4)';
-            const scale = Math.max(1080 / artworkImg.width, 1920 / artworkImg.height);
-            const scaledWidth = artworkImg.width * scale;
-            const scaledHeight = artworkImg.height * scale;
-            const offsetX = (1080 - scaledWidth) / 2;
-            const offsetY = (1920 - scaledHeight) / 2;
-            ctx.drawImage(artworkImg, offsetX, offsetY, scaledWidth, scaledHeight);
-
-            // Main artwork centered
-            ctx.filter = 'none';
-            const artworkHeight = 1400;
-            const artworkWidth = 1080;
-            const artworkTop = 200;
-            ctx.drawImage(artworkImg, 0, artworkTop, artworkWidth, artworkHeight);
-
-            // Branding
-            ctx.fillStyle = 'rgba(17, 20, 24, 0.8)';
-            ctx.fillRect(0, 1700, 1080, 220);
-
-            ctx.fillStyle = '#9dabb8';
-            ctx.font = '24px "Spline Sans", sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Through the Vision of', 540, 1770);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 36px "Spline Sans", sans-serif';
-            ctx.fillText('Iván Guaderrama', 540, 1820);
-
-            // Decorative element
-            ctx.strokeStyle = '#1980e6';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(340, 1850);
-            ctx.lineTo(740, 1850);
-            ctx.stroke();
-
-            resolve(canvas.toDataURL('image/png'));
-        };
-        artworkImg.src = artworkUrl;
-    });
-}
-
-function resetCollageButton(btn) {
-    btn.disabled = false;
-    btn.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-[#1980e6] flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/>
-            </svg>
-        </div>
-        <div class="flex-1 text-left">
-            <p class="text-white font-semibold">Before/After Collage</p>
-            <p class="text-[#9dabb8] text-xs">Perfect for Instagram Post (1080x1080)</p>
-        </div>
-    `;
-}
-
-function resetStoryButton(btn) {
-    btn.disabled = false;
-    btn.innerHTML = `
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                <rect x="7" y="2" width="10" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/>
-                <circle cx="12" cy="6" r="1.5" fill="white"/>
-            </svg>
-        </div>
-        <div class="flex-1 text-left">
-            <p class="text-white font-semibold">Instagram Story</p>
-            <p class="text-[#9dabb8] text-xs">Optimized format (1080x1920)</p>
-        </div>
-    `;
 }

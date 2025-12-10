@@ -1,6 +1,8 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
+const { v4: uuidv4 } = require("uuid");
 
 // Define el secret para la API key de Gemini
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
@@ -11,6 +13,127 @@ const { GoogleGenAI } = require("@google/genai");
 const convert = require("heic-convert");
 
 admin.initializeApp();
+
+// ============================================
+// ARTWORK STORAGE CONFIGURATION
+// ============================================
+// Store artwork images directly in Firestore (no Storage IAM needed)
+// Base64 images are typically 200-500KB, well within Firestore's 1MB limit
+const MAX_ARTWORKS_PER_USER = 10;
+const ARTWORK_RETENTION_DAYS = 15;
+
+/**
+ * Saves artwork directly to Firestore (no Storage needed)
+ * Compresses image if necessary to fit within Firestore's 1MB limit
+ * @param {string} userId - User ID
+ * @param {string} imageBase64 - Base64 encoded image
+ * @param {string} originalUrl - Original image gs:// URL
+ * @returns {Promise<{artworkId: string, imageBase64: string}>}
+ */
+async function saveArtwork(userId, imageBase64, originalUrl) {
+  const artworkId = uuidv4();
+
+  try {
+    let finalBase64 = imageBase64;
+    let sizeInBytes = Buffer.byteLength(imageBase64, 'utf8');
+    let sizeInKB = Math.round(sizeInBytes / 1024);
+    console.log(`Original artwork size: ${sizeInKB}KB`);
+
+    // If image is too large, compress it using Jimp
+    const MAX_SIZE = 800000; // 800KB to leave room for other document fields
+    if (sizeInBytes > MAX_SIZE) {
+      console.log(`Compressing artwork from ${sizeInKB}KB...`);
+
+      try {
+        // Decode base64 to buffer
+        const imageBuffer = Buffer.from(imageBase64, 'base64');
+        const image = await Jimp.read(imageBuffer);
+
+        // Resize to smaller dimension (max 1200px)
+        const maxDim = 1200;
+        if (image.bitmap.width > maxDim || image.bitmap.height > maxDim) {
+          if (image.bitmap.width > image.bitmap.height) {
+            await image.resize(maxDim, Jimp.AUTO);
+          } else {
+            await image.resize(Jimp.AUTO, maxDim);
+          }
+        }
+
+        // Convert to JPEG with 85% quality (much smaller than PNG)
+        await image.quality(85);
+        const compressedBuffer = await image.getBufferAsync(Jimp.MIME_JPEG);
+        finalBase64 = compressedBuffer.toString('base64');
+
+        sizeInBytes = Buffer.byteLength(finalBase64, 'utf8');
+        sizeInKB = Math.round(sizeInBytes / 1024);
+        console.log(`Compressed artwork to: ${sizeInKB}KB`);
+
+        // If still too large, skip
+        if (sizeInBytes > 900000) {
+          console.warn(`Artwork still too large after compression: ${sizeInKB}KB`);
+          return null;
+        }
+      } catch (compressError) {
+        console.error('Error compressing artwork:', compressError);
+        return null;
+      }
+    }
+
+    // Save directly to Firestore with base64 image data
+    const artworkRef = admin.firestore()
+      .collection("users").doc(userId)
+      .collection("artworks").doc(artworkId);
+
+    await artworkRef.set({
+      imageBase64: finalBase64,  // Store image data directly
+      originalUrl: originalUrl,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      style: "fauvist"
+    });
+
+    console.log(`✓ Artwork saved to Firestore: ${artworkId} for user ${userId} (${sizeInKB}KB)`);
+
+    // Cleanup old artworks (keep only MAX_ARTWORKS_PER_USER)
+    await cleanupOldArtworks(userId);
+
+    return { artworkId, imageBase64: finalBase64 };
+  } catch (error) {
+    console.error(`Error saving artwork for user ${userId}:`, error);
+    // Don't throw - artwork saving is optional, image generation already succeeded
+    return null;
+  }
+}
+
+/**
+ * Removes oldest artworks if user has more than MAX_ARTWORKS_PER_USER
+ * @param {string} userId - User ID
+ */
+async function cleanupOldArtworks(userId) {
+  try {
+    const artworksRef = admin.firestore()
+      .collection("users").doc(userId)
+      .collection("artworks");
+
+    const snapshot = await artworksRef
+      .orderBy("createdAt", "desc")
+      .get();
+
+    if (snapshot.size > MAX_ARTWORKS_PER_USER) {
+      const toDelete = snapshot.docs.slice(MAX_ARTWORKS_PER_USER);
+
+      // Use batch writes for parallel deletion (more efficient)
+      const batch = admin.firestore().batch();
+      toDelete.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+
+      console.log(`Cleaned up ${toDelete.length} old artworks for user ${userId}`);
+    }
+  } catch (error) {
+    console.error(`Error cleaning up artworks for user ${userId}:`, error);
+  }
+}
 
 // ============================================
 // RATE LIMITING (in-memory, resets on cold start)
@@ -53,12 +176,12 @@ exports.initializeUser = onDocumentCreated(
   "customers/{uid}",
   async (event) => {
     const userId = event.params.uid;
-    
+
     try {
       // Verificar si el usuario ya existe en la colección users
       const userRef = admin.firestore().collection("users").doc(userId);
       const userDoc = await userRef.get();
-      
+
       if (!userDoc.exists) {
         // Crear usuario con 3 créditos gratis
         await userRef.set({
@@ -69,7 +192,7 @@ exports.initializeUser = onDocumentCreated(
       } else {
         console.log(`User ${userId} already exists, skipping initialization`);
       }
-      
+
       return null;
     } catch (error) {
       console.error(`Error initializing user ${userId}:`, error);
@@ -89,16 +212,16 @@ exports.grantCreditsOnPayment = onDocumentCreated(
       const payment = event.data.data();
       const userId = event.params.uid;
       const paymentId = event.params.paymentId;
-      
+
       console.log(`Processing payment ${paymentId} for user ${userId}`);
       console.log(`Payment data:`, JSON.stringify(payment, null, 2));
-      
+
       // Solo procesar pagos exitosos
       if (payment.status !== "succeeded") {
         console.log(`Payment ${paymentId} not succeeded: ${payment.status}`);
         return null;
       }
-      
+
       // Mapear Price IDs a créditos
       const CREDITS_BY_PRICE = {
         "price_1SJ0UWGdnHfsTKebUDHcFzL3": 10,  // Starter Pack ($4.99)
@@ -106,32 +229,32 @@ exports.grantCreditsOnPayment = onDocumentCreated(
         "price_1Sb955GdnHfsTKebNLgWcpdc": 50,  // Pro Pack ($19.99)
         "price_1Sb95BGdnHfsTKebUlBo75LW": 100, // Artist Pack ($34.99)
       };
-      
+
       // Intentar obtener el price ID de múltiples ubicaciones posibles
       let priceId = null;
-      
+
       // Método 1: items[0].price.id (estructura de Checkout Session)
       if (payment.items && payment.items.length > 0 && payment.items[0].price) {
         priceId = payment.items[0].price.id;
         console.log(`Price ID found in items[0].price.id: ${priceId}`);
       }
-      
+
       // Método 2: price.id (estructura alternativa)
       if (!priceId && payment.price && payment.price.id) {
         priceId = payment.price.id;
         console.log(`Price ID found in price.id: ${priceId}`);
       }
-      
+
       // Método 3: prices[0].id (estructura de suscripciones)
       if (!priceId && payment.prices && payment.prices.length > 0) {
         priceId = payment.prices[0].id;
         console.log(`Price ID found in prices[0].id: ${priceId}`);
       }
-      
+
       // Método 4: Fallback por monto (si no se encuentra price ID)
       if (!priceId && payment.amount) {
         console.log(`No price ID found, using amount: ${payment.amount}`);
-        
+
         // Identificar por monto (en centavos)
         if (payment.amount === 499) {
           priceId = "price_1SJ0UWGdnHfsTKebUDHcFzL3"; // Starter Pack
@@ -141,34 +264,34 @@ exports.grantCreditsOnPayment = onDocumentCreated(
           console.log(`Matched amount $12.99 to Popular Pack`);
         }
       }
-      
+
       if (!priceId) {
         console.error(`ERROR: No price ID found in payment ${paymentId}`);
         console.error(`Payment structure:`, JSON.stringify(payment, null, 2));
         return null;
       }
-      
+
       const credits = CREDITS_BY_PRICE[priceId];
-      
+
       if (!credits) {
         console.error(`ERROR: Unknown price ID: ${priceId}`);
         console.error(`Known price IDs:`, Object.keys(CREDITS_BY_PRICE));
         return null;
       }
-      
+
       // Agregar créditos al usuario
       console.log(`Adding ${credits} credits to user ${userId}`);
-      
+
       await admin.firestore().collection("users").doc(userId).set(
         {
           credits: admin.firestore.FieldValue.increment(credits),
         },
         { merge: true }
       );
-      
+
       console.log(`SUCCESS: Added ${credits} credits to user ${userId} from payment ${paymentId}`);
       return null;
-      
+
     } catch (error) {
       console.error(`CRITICAL ERROR in grantCreditsOnPayment:`, error);
       console.error(`Error stack:`, error.stack);
@@ -207,27 +330,27 @@ const ALLOWED = new Set([
 // CORS middleware - DEBE IR PRIMERO
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  
+
   // Permitir el origen si está en la lista
   if (origin && ALLOWED.has(origin)) {
     res.set("Access-Control-Allow-Origin", origin);
   }
-  
+
   // Headers CORS necesarios
   res.set("Vary", "Origin");
   res.set("Access-Control-Allow-Credentials", "true");
   res.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.set("Access-Control-Allow-Headers", "Content-Type,Authorization,X-Requested-With");
-  
+
   // Manejar preflight OPTIONS
   if (req.method === "OPTIONS") {
     return res.status(204).end();
   }
-  
+
   next();
 });
 
- // Parser JSON
+// Parser JSON
 app.use(express.json());
 
 // Endpoint para asegurar documento de usuario con créditos iniciales
@@ -305,13 +428,13 @@ app.post("/generate", async (req, res) => {
     let imageBuffer;
     try {
       console.log("Downloading image from Storage URL:", imageUrl);
-      
+
       // Extract bucket name and file path from gs:// URL
       const gsUrlMatch = imageUrl.match(/^gs:\/\/([^\/]+)\/(.+)$/);
       if (!gsUrlMatch) {
         throw new Error("Invalid Storage URL format");
       }
-      
+
       const bucketName = gsUrlMatch[1];
       const filePath = gsUrlMatch[2];
 
@@ -345,7 +468,7 @@ app.post("/generate", async (req, res) => {
       }
 
       [imageBuffer] = await file.download();
-      
+
       console.log("✓ Image downloaded successfully. Size:", imageBuffer.length, "bytes");
     } catch (downloadError) {
       console.error("ERROR downloading from Storage:");
@@ -361,22 +484,22 @@ app.post("/generate", async (req, res) => {
     try {
       // Detect HEIC format by checking the file signature (magic bytes)
       // HEIC files start with specific bytes at offset 4
-      const isHEIC = imageBuffer.length > 12 && 
-                     (imageBuffer.toString('ascii', 4, 8) === 'ftyp' && 
-                      (imageBuffer.toString('ascii', 8, 12) === 'heic' || 
-                       imageBuffer.toString('ascii', 8, 12) === 'mif1' ||
-                       imageBuffer.toString('ascii', 8, 12) === 'msf1' ||
-                       imageBuffer.toString('ascii', 8, 12) === 'hevc'));
-      
+      const isHEIC = imageBuffer.length > 12 &&
+        (imageBuffer.toString('ascii', 4, 8) === 'ftyp' &&
+          (imageBuffer.toString('ascii', 8, 12) === 'heic' ||
+            imageBuffer.toString('ascii', 8, 12) === 'mif1' ||
+            imageBuffer.toString('ascii', 8, 12) === 'msf1' ||
+            imageBuffer.toString('ascii', 8, 12) === 'hevc'));
+
       if (isHEIC) {
         console.log("HEIC format detected, converting to PNG...");
-        
+
         const outputBuffer = await convert({
           buffer: imageBuffer,
           format: 'PNG',
           quality: 1  // Maximum quality for PNG
         });
-        
+
         processedBuffer = outputBuffer;
         console.log("✓ HEIC converted to PNG successfully. New size:", processedBuffer.length, "bytes");
       } else {
@@ -395,25 +518,25 @@ app.post("/generate", async (req, res) => {
     let resizedImageBuffer;
     try {
       console.log("Starting Jimp processing. Buffer size:", processedBuffer.length);
-      
+
       // Validate buffer
       if (!processedBuffer || processedBuffer.length === 0) {
         throw new Error("Image buffer is empty");
       }
-      
+
       const image = await Jimp.read(processedBuffer);
       console.log("Jimp successfully read image");
-      
+
       // Get original dimensions
       const width = image.bitmap.width;
       const height = image.bitmap.height;
       console.log(`Original dimensions: ${width}x${height}`);
-      
+
       // Calculate new dimensions preserving aspect ratio
       // Max dimension will be 1536px (good balance of quality and speed)
       const maxDimension = 1536;
       let newWidth, newHeight;
-      
+
       if (width > height) {
         // Landscape or square
         newWidth = Math.min(width, maxDimension);
@@ -423,12 +546,12 @@ app.post("/generate", async (req, res) => {
         newHeight = Math.min(height, maxDimension);
         newWidth = Jimp.AUTO; // Jimp will calculate proportionally
       }
-      
+
       console.log(`Resizing to: ${newWidth === Jimp.AUTO ? 'AUTO' : newWidth}x${newHeight === Jimp.AUTO ? 'AUTO' : newHeight}`);
-      
+
       await image.resize(newWidth, newHeight);
       console.log("Resize completed");
-      
+
       resizedImageBuffer = await image.getBufferAsync(Jimp.MIME_PNG);
       console.log(`Final buffer size: ${resizedImageBuffer.length} bytes`);
 
@@ -438,7 +561,7 @@ app.post("/generate", async (req, res) => {
       console.error("Error stack:", jimpError.stack);
       console.error("Buffer length:", processedBuffer ? processedBuffer.length : 'null');
       console.error("Buffer type:", typeof processedBuffer);
-      
+
       return res.status(500).json({
         error: "Error al redimensionar la imagen."
       });
@@ -507,18 +630,18 @@ app.post("/generate", async (req, res) => {
         }
       }
     }
-    
+
     // ✅ VALIDAR que Gemini generó una imagen transformada
     if (!generatedImageBase64) {
       console.error("ERROR: Gemini no generó imagen transformada");
       console.error(
-          "Response structure:",
-          JSON.stringify(result, null, 2),
+        "Response structure:",
+        JSON.stringify(result, null, 2),
       );
       // NO descontar crédito si falla la transformación
       const errorMsg = "No se pudo transformar tu imagen a arte. " +
-                       "Por favor intenta con otra foto o " +
-                       "contacta soporte.";
+        "Por favor intenta con otra foto o " +
+        "contacta soporte.";
       return res.status(500).json({
         error: errorMsg
       });
@@ -531,11 +654,15 @@ app.post("/generate", async (req, res) => {
       if (currentCredits < 1) {
         throw new Error('Insufficient credits');
       }
-      transaction.update(userRef, {credits: currentCredits - 1});
+      transaction.update(userRef, { credits: currentCredits - 1 });
     });
+
+    // Save artwork to Storage and Firestore (non-blocking, don't fail if this fails)
+    const savedArtwork = await saveArtwork(userId, generatedImageBase64, imageUrl);
 
     res.json({
       imageBase64: generatedImageBase64,
+      artworkId: savedArtwork?.artworkId || null,
     });
 
   } catch (error) {
@@ -552,3 +679,55 @@ exports.api = onRequest({
   concurrency: 1,
   secrets: [geminiApiKey]  // Dar acceso al secret
 }, app);
+
+// ============================================
+// SCHEDULED CLEANUP: Delete artworks older than 15 days
+// Runs daily at 3:00 AM Mexico City time
+// ============================================
+exports.cleanupExpiredArtworks = onSchedule({
+  schedule: "0 3 * * *",
+  timeZone: "America/Mexico_City",
+  region: "us-central1",
+}, async (event) => {
+  console.log("Starting expired artworks cleanup...");
+
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - ARTWORK_RETENTION_DAYS);
+
+  try {
+    // Query all expired artworks across all users
+    const expiredDocs = await admin.firestore()
+      .collectionGroup("artworks")
+      .where("createdAt", "<", cutoffDate)
+      .get();
+
+    if (expiredDocs.empty) {
+      console.log("No expired artworks found");
+      return;
+    }
+
+    console.log(`Found ${expiredDocs.size} expired artworks to delete`);
+
+    // Use batched deletes (max 500 per batch in Firestore)
+    const BATCH_SIZE = 500;
+    const docs = expiredDocs.docs;
+    let deletedCount = 0;
+
+    for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+      const batch = admin.firestore().batch();
+      const chunk = docs.slice(i, i + BATCH_SIZE);
+
+      chunk.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      deletedCount += chunk.length;
+      console.log(`Deleted batch: ${deletedCount}/${docs.length}`);
+    }
+
+    console.log(`Cleanup complete: ${deletedCount} deleted`);
+  } catch (error) {
+    console.error("Error in cleanup job:", error);
+  }
+});
