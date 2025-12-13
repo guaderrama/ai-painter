@@ -1,152 +1,230 @@
 /**
  * Auth Feature Module
- * Handles authentication (Google, Email/Password)
+ * Handles email authentication with unified Sign In / Sign Up tabs
  */
 
-import { auth, db, googleProvider } from '../../shared/config/firebase.js';
+import { auth, db } from '../../shared/config/firebase.js';
 import { showScreen } from '../../shared/ui/screens.js';
-import { APP_CONFIG, API_BASE_URL } from '../../shared/config/api.js';
+import { API_BASE_URL } from '../../shared/config/api.js';
 import { loadUserHistory } from '../history/index.js';
+
+// Auth mode: 'signin' or 'signup'
+let authMode = 'signin';
 
 // UI Elements
 let ui = {};
+
 // Store unsubscribe function to prevent memory leaks
 let userSnapshotUnsubscribe = null;
 
 export function initAuth() {
     // Cache UI elements
     ui = {
-        loginEmailInput: document.getElementById("login-email-input"),
-        loginPasswordInput: document.getElementById("login-password-input"),
-        loginErrorMessage: document.getElementById("login-error-message"),
-        signupEmailInput: document.getElementById("signup-email-input"),
-        signupPasswordInput: document.getElementById("signup-password-input"),
-        signupConfirmPasswordInput: document.getElementById("signup-confirm-password-input"),
-        signupErrorMessage: document.getElementById("signup-error-message"),
+        // Unified auth screen elements
+        authEmailInput: document.getElementById("auth-email-input"),
+        authPasswordInput: document.getElementById("auth-password-input"),
+        authConfirmPasswordInput: document.getElementById("auth-confirm-password-input"),
+        confirmPasswordContainer: document.getElementById("confirm-password-container"),
+        authErrorMessage: document.getElementById("auth-error-message"),
+        authSubmitButton: document.getElementById("auth-submit-button"),
+        authSubmitText: document.getElementById("auth-submit-text"),
+        authScreenTitle: document.getElementById("auth-screen-title"),
+        tabSignin: document.getElementById("tab-signin"),
+        tabSignup: document.getElementById("tab-signup"),
+        // Upload screen elements
         userGreeting: document.getElementById("user-greeting"),
         userCredits: document.getElementById("user-credits"),
     };
 
     setupAuthButtons();
     setupAuthStateObserver();
+    setupPasswordToggles();
 }
 
 function setupAuthButtons() {
     const buttons = {
-        loginGoogle: document.getElementById("login-google"),
         loginEmailMain: document.getElementById("login-email-main"),
         backToMainLogin: document.getElementById("back-to-main-login"),
-        emailLogin: document.getElementById("email-login-button"),
-        goToSignup: document.getElementById("go-to-signup"),
-        emailSignup: document.getElementById("email-signup-button"),
-        goToLogin: document.getElementById("go-to-login"),
-        goToLoginFromSignup: document.getElementById("go-to-login-from-signup"),
+        authSubmit: document.getElementById("auth-submit-button"),
         logout: document.getElementById("logout-button"),
     };
 
-    // Google Login
-    if (buttons.loginGoogle) {
-        buttons.loginGoogle.addEventListener("click", () => {
-            auth.signInWithPopup(googleProvider).catch(error =>
-                alert(`Google Sign-In Error: ${error.message}`)
-            );
+    // Navigate to email auth screen
+    if (buttons.loginEmailMain) {
+        buttons.loginEmailMain.addEventListener("click", () => {
+            setAuthMode('signin');
+            showScreen("emailAuth");
         });
     }
 
-    // Navigation between auth screens
-    if (buttons.loginEmailMain) {
-        buttons.loginEmailMain.addEventListener("click", () => showScreen("emailLogin"));
-    }
+    // Back to main login
     if (buttons.backToMainLogin) {
         buttons.backToMainLogin.addEventListener("click", () => showScreen("login"));
     }
-    if (buttons.goToSignup) {
-        buttons.goToSignup.addEventListener("click", (e) => {
-            e.preventDefault();
-            showScreen("emailSignup");
-        });
+
+    // Tab switching
+    if (ui.tabSignin) {
+        ui.tabSignin.addEventListener("click", () => setAuthMode('signin'));
     }
-    if (buttons.goToLogin) {
-        buttons.goToLogin.addEventListener("click", (e) => {
-            e.preventDefault();
-            showScreen("emailLogin");
-        });
-    }
-    if (buttons.goToLoginFromSignup) {
-        buttons.goToLoginFromSignup.addEventListener("click", () => showScreen("emailLogin"));
+    if (ui.tabSignup) {
+        ui.tabSignup.addEventListener("click", () => setAuthMode('signup'));
     }
 
-    // Email Login
-    if (buttons.emailLogin) {
-        buttons.emailLogin.addEventListener("click", handleEmailLogin);
-    }
-
-    // Email Signup
-    if (buttons.emailSignup) {
-        buttons.emailSignup.addEventListener("click", handleEmailSignup);
+    // Submit (handles both signin and signup based on authMode)
+    if (buttons.authSubmit) {
+        buttons.authSubmit.addEventListener("click", handleAuthSubmit);
     }
 
     // Logout
     if (buttons.logout) {
         buttons.logout.addEventListener("click", () => {
-            cleanupAuth(); // Cleanup listeners before signing out
+            cleanupAuth();
             auth.signOut();
         });
     }
 }
 
-function handleEmailLogin() {
-    const email = ui.loginEmailInput?.value;
-    const password = ui.loginPasswordInput?.value;
+/**
+ * Set authentication mode (signin or signup)
+ */
+function setAuthMode(mode) {
+    authMode = mode;
 
-    if (!email || !password) {
-        if (ui.loginErrorMessage) {
-            ui.loginErrorMessage.textContent = "Please enter both email and password.";
+    // Update tab styles
+    if (ui.tabSignin && ui.tabSignup) {
+        if (mode === 'signin') {
+            ui.tabSignin.classList.add('active');
+            ui.tabSignup.classList.remove('active');
+        } else {
+            ui.tabSignin.classList.remove('active');
+            ui.tabSignup.classList.add('active');
         }
-        return;
     }
 
-    auth.signInWithEmailAndPassword(email, password)
-        .catch(error => {
-            if (ui.loginErrorMessage) {
-                ui.loginErrorMessage.textContent = error.message;
-            }
-        });
+    // Update title
+    if (ui.authScreenTitle) {
+        ui.authScreenTitle.textContent = mode === 'signin' ? 'Sign In' : 'Create Account';
+    }
+
+    // Update submit button text
+    if (ui.authSubmitText) {
+        ui.authSubmitText.textContent = mode === 'signin' ? 'Sign In' : 'Sign Up';
+    }
+
+    // Show/hide confirm password field
+    if (ui.confirmPasswordContainer) {
+        if (mode === 'signup') {
+            ui.confirmPasswordContainer.classList.remove('hidden');
+        } else {
+            ui.confirmPasswordContainer.classList.add('hidden');
+        }
+    }
+
+    // Clear error message
+    if (ui.authErrorMessage) {
+        ui.authErrorMessage.textContent = '';
+    }
 }
 
-function handleEmailSignup() {
-    const email = ui.signupEmailInput?.value;
-    const password = ui.signupPasswordInput?.value;
-    const confirmPassword = ui.signupConfirmPasswordInput?.value;
+/**
+ * Handle auth form submission
+ */
+function handleAuthSubmit() {
+    const email = ui.authEmailInput?.value;
+    const password = ui.authPasswordInput?.value;
 
-    if (!email || !password || !confirmPassword) {
-        if (ui.signupErrorMessage) {
-            ui.signupErrorMessage.textContent = "Please fill in all fields.";
+    if (!email || !password) {
+        if (ui.authErrorMessage) {
+            ui.authErrorMessage.textContent = "Please enter both email and password.";
         }
         return;
     }
 
-    if (password !== confirmPassword) {
-        if (ui.signupErrorMessage) {
-            ui.signupErrorMessage.textContent = "Passwords do not match.";
-        }
-        return;
-    }
+    if (authMode === 'signin') {
+        // Sign In
+        auth.signInWithEmailAndPassword(email, password)
+            .catch(error => {
+                if (ui.authErrorMessage) {
+                    ui.authErrorMessage.textContent = getErrorMessage(error.code);
+                }
+            });
+    } else {
+        // Sign Up
+        const confirmPassword = ui.authConfirmPasswordInput?.value;
 
-    auth.createUserWithEmailAndPassword(email, password)
-        .catch(error => {
-            if (ui.signupErrorMessage) {
-                ui.signupErrorMessage.textContent = error.message;
+        if (!confirmPassword) {
+            if (ui.authErrorMessage) {
+                ui.authErrorMessage.textContent = "Please confirm your password.";
             }
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            if (ui.authErrorMessage) {
+                ui.authErrorMessage.textContent = "Passwords do not match.";
+            }
+            return;
+        }
+
+        if (password.length < 6) {
+            if (ui.authErrorMessage) {
+                ui.authErrorMessage.textContent = "Password must be at least 6 characters.";
+            }
+            return;
+        }
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .catch(error => {
+                if (ui.authErrorMessage) {
+                    ui.authErrorMessage.textContent = getErrorMessage(error.code);
+                }
+            });
+    }
+}
+
+/**
+ * Get user-friendly error message
+ */
+function getErrorMessage(errorCode) {
+    const messages = {
+        'auth/invalid-email': 'Invalid email address.',
+        'auth/user-disabled': 'This account has been disabled.',
+        'auth/user-not-found': 'No account found with this email.',
+        'auth/wrong-password': 'Incorrect password.',
+        'auth/email-already-in-use': 'An account already exists with this email.',
+        'auth/weak-password': 'Password is too weak.',
+        'auth/invalid-credential': 'Invalid email or password.',
+    };
+    return messages[errorCode] || 'An error occurred. Please try again.';
+}
+
+/**
+ * Setup password visibility toggles
+ */
+function setupPasswordToggles() {
+    const togglePassword = document.getElementById("toggle-auth-password");
+    const toggleConfirmPassword = document.getElementById("toggle-auth-confirm-password");
+
+    if (togglePassword && ui.authPasswordInput) {
+        togglePassword.addEventListener("click", () => {
+            const type = ui.authPasswordInput.type === "password" ? "text" : "password";
+            ui.authPasswordInput.type = type;
         });
+    }
+
+    if (toggleConfirmPassword && ui.authConfirmPasswordInput) {
+        toggleConfirmPassword.addEventListener("click", () => {
+            const type = ui.authConfirmPasswordInput.type === "password" ? "text" : "password";
+            ui.authConfirmPasswordInput.type = type;
+        });
+    }
 }
 
 function setupAuthStateObserver() {
     auth.onAuthStateChanged(user => {
         if (user) {
             console.log("User is signed in:", user.email);
-            if (ui.loginErrorMessage) ui.loginErrorMessage.textContent = "";
-            if (ui.signupErrorMessage) ui.signupErrorMessage.textContent = "";
+            if (ui.authErrorMessage) ui.authErrorMessage.textContent = "";
             showScreen("upload");
             updateUserInfo(user);
         } else {
@@ -185,7 +263,6 @@ export function updateUserInfo(user) {
             }
         } else {
             // User document doesn't exist - call Cloud Function to create it
-            // This bypasses Firestore security rules that block direct credit writes
             try {
                 console.log("User document not found, calling ensure-user endpoint...");
                 const idToken = await user.getIdToken();

@@ -793,3 +793,25 @@ input[type="file"] {
     width: 20px;
     height: 20px;
 }
+
+/* ============================================
+   AUTH TABS - Sign In / Sign Up Toggle
+   ============================================ */
+
+.auth-tab {
+    background: transparent;
+    border: none;
+    color: #9dabb8;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.auth-tab:hover {
+    color: #fff;
+}
+
+.auth-tab.active {
+    color: #1980e6;
+    border-bottom-color: #1980e6;
+}

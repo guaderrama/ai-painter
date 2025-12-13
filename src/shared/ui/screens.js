@@ -10,8 +10,7 @@ export function initScreens() {
     screens = {
         welcome: document.getElementById("welcome-screen"),
         login: document.getElementById("login-screen"),
-        emailLogin: document.getElementById("email-login-screen"),
-        emailSignup: document.getElementById("email-signup-screen"),
+        emailAuth: document.getElementById("email-auth-screen"),
         upload: document.getElementById("upload-screen"),
         processing: document.getElementById("processing-screen"),
         result: document.getElementById("result-screen"),
